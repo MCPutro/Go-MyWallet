@@ -89,7 +89,7 @@ func (u *userRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, newUser model
 func (u *userRepositoryImpl) FindAll(ctx context.Context, tx *sql.Tx) (*[]model.Users, error) {
 	SQL := query.GetUserAll + ";"
 
-	fmt.Println(SQL)
+	//fmt.Println(SQL)
 
 	rows, err := tx.QueryContext(ctx, SQL)
 	defer rows.Close()
@@ -112,7 +112,7 @@ func (u *userRepositoryImpl) FindAll(ctx context.Context, tx *sql.Tx) (*[]model.
 
 		m.Authentication = model.UserAuthentication{}
 
-		fmt.Println(m.UserId, " -> ", userData, " -> ", len(userData))
+		//fmt.Println(m.UserId, " -> ", userData, " -> ", len(userData))
 
 		//for _, s := range strings.Split(userData, "##") {
 		//	data := strings.Split(s, "|")

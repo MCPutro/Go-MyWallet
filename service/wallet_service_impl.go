@@ -2,31 +2,100 @@ package service
 
 import (
 	"context"
-	"firebase.google.com/go/v4/db"
+	"database/sql"
 	"github.com/MCPutro/Go-MyWallet/entity/model"
+	"github.com/MCPutro/Go-MyWallet/helper"
 	"github.com/MCPutro/Go-MyWallet/repository"
 	"github.com/go-playground/validator/v10"
 )
 
 type walletServiceImpl struct {
 	validate   *validator.Validate
-	database   *db.Ref
 	walletRepo repository.WalletRepository
+	db         *sql.DB //postgresql
+	//database   *db.Ref //firebase
+
 }
 
-func NewWalletService(validate *validator.Validate, database *db.Ref, walletRepo repository.WalletRepository) WalletService {
-	return &walletServiceImpl{validate: validate, database: database, walletRepo: walletRepo}
+func (w *walletServiceImpl) GetWalletType(ctx context.Context) (*[]model.WalletType, error) {
+	//create db transaction
+	conn, err := w.db.Conn(ctx)
+	beginTx, err := conn.BeginTx(ctx, nil)
+	defer func() {
+		helper.CommitOrRollback(err, beginTx)
+		helper.ConnClose(conn)
+	}()
+	if err != nil {
+		return nil, err
+	}
+
+	walletType, err := w.walletRepo.GetWalletType(ctx, beginTx)
+	if err != nil {
+		return nil, err
+	}
+
+	var wt []model.WalletType = nil
+
+	for key, value := range walletType {
+		wt = append(wt, model.WalletType{
+			WalletCode: key,
+			WalletName: value,
+		})
+	}
+
+	return &wt, nil
+
+}
+
+func (w *walletServiceImpl) GetWalletByUserId(ctx context.Context, UID string) (*[]model.Wallet, error) {
+	//create db transaction
+	conn, err := w.db.Conn(ctx)
+	beginTx, err := conn.BeginTx(ctx, nil)
+	defer func() {
+		helper.CommitOrRollback(err, beginTx)
+		helper.ConnClose(conn)
+	}()
+	if err != nil {
+		return nil, err
+	}
+
+	walletsByUserId, err := w.walletRepo.GetWalletByUserId(ctx, beginTx, UID)
+	if err != nil {
+		return nil, err
+	}
+
+	return walletsByUserId, nil
 }
 
 func (w *walletServiceImpl) AddWallet(ctx context.Context, newWallet *model.Wallet) (*model.Wallet, error) {
 
+	//validation data
+	err2 := w.validate.Struct(newWallet)
+	if err2 != nil {
+		return nil, err2
+	}
 	newWallet.IsActive = "Y"
 
-	wallet, err := w.walletRepo.AddWallet(ctx, w.database, newWallet)
+	//create db transaction
+	conn, err := w.db.Conn(ctx)
+	beginTx, err := conn.BeginTx(ctx, nil)
+	defer func() {
+		helper.CommitOrRollback(err, beginTx)
+		helper.ConnClose(conn)
+	}()
+	if err != nil {
+		return nil, err
+	}
+
+	wallet, err := w.walletRepo.AddWallet(ctx, beginTx, newWallet)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return wallet, err
+	return wallet, nil
+}
+
+func NewWalletService(validate *validator.Validate, database *sql.DB, walletRepo repository.WalletRepository) WalletService {
+	return &walletServiceImpl{validate: validate, db: database, walletRepo: walletRepo}
 }

@@ -7,4 +7,6 @@ import (
 
 type WalletService interface {
 	AddWallet(ctx context.Context, newWallet *model.Wallet) (*model.Wallet, error)
+	GetWalletByUserId(ctx context.Context, UID string) (*[]model.Wallet, error)
+	GetWalletType(ctx context.Context) (*[]model.WalletType, error)
 }

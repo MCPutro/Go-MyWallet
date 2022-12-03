@@ -33,4 +33,7 @@ const (
 	GetListAccount = "select username\nfrom public.users\nunion\nselect data_value\nfrom public.user_data\nwhere data_key = 'EMAIL'"
 
 	GetWalletType = "select wt.wallet_code, wt.wallet_name from public.wallet_type wt;"
+
+	//GetWalletByUserId = "select w.user_id, w.wallet_id, w.wallet_name, w.type from public.wallets w where w.is_active = 'Y' and w.user_id = $1 order by w.wallet_id ASC;"
+	GetWalletByUserId = "select w.user_id, w.wallet_id, w.wallet_name, wt.wallet_code from public.wallets w join public.wallet_type wt on wt.wallet_code = w.type where w.is_active = 'Y' and w.user_id = $1 order by w.wallet_id ASC;"
 )
