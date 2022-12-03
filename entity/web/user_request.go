@@ -7,6 +7,7 @@ type UserRegistration struct {
 	Password  string `validate:"required,max=100,min=3"`
 	Email     string `validate:"required,email"`
 	Imei      string
+	DeviceId  string
 }
 
 type UserRegistrationResp struct {

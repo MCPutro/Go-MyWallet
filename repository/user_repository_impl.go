@@ -3,13 +3,15 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/MCPutro/Go-MyWallet/entity/model"
 	"github.com/MCPutro/Go-MyWallet/helper"
+	"github.com/MCPutro/Go-MyWallet/query"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"log"
-	"strings"
 )
 
 type userRepositoryImpl struct{}
@@ -63,6 +65,8 @@ func (u *userRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, newUser model
 
 	//insert into user_data
 	for key, value := range newUser.Data {
+		fmt.Println(key, " : ", value)
+
 		SQL2 := "INSERT INTO public.user_data (user_id, data_key, data_value) VALUES ($1, $2, $3);"
 		_, err = tx.ExecContext(ctx, SQL2, newUser.UserId, key, value)
 		if err != nil {
@@ -72,7 +76,7 @@ func (u *userRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, newUser model
 	}
 
 	//insert into user_authentication
-	SQL3 := "INSERT INTO public.user_authentication (user_id, password) VALUES ($1, $2);"
+	SQL3 := "INSERT INTO public.user_authentication (user_id, data_key, data_value) VALUES ($1, 'PASSWORD', $2);"
 	_, err = tx.ExecContext(ctx, SQL3, newUser.UserId, newUser.Authentication.Password)
 	if err != nil {
 		fmt.Println("[LOG] User_repository_impl - Save3 :", err)
@@ -83,11 +87,9 @@ func (u *userRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, newUser model
 }
 
 func (u *userRepositoryImpl) FindAll(ctx context.Context, tx *sql.Tx) (*[]model.Users, error) {
-	SQL := "select u.user_id, u.username, u.first_name, u.last_name, u.status, ua.password, string_agg(concat(ud.data_key ,'|', ud.data_value),'##') as user_data " + //string_agg(ud.data_key,'|') as keys , string_agg(ud.data_value,'|') as values " +
-		"from public.users u " +
-		"left join user_authentication ua on u.user_id = ua.user_id " +
-		"left join user_data ud on u.user_id = ud.user_id " +
-		"group by (u.user_id, u.username, u.first_name, u.last_name, ua.password)"
+	SQL := query.GetUserAll + ";"
+
+	fmt.Println(SQL)
 
 	rows, err := tx.QueryContext(ctx, SQL)
 	defer rows.Close()
@@ -96,23 +98,35 @@ func (u *userRepositoryImpl) FindAll(ctx context.Context, tx *sql.Tx) (*[]model.
 		return nil, err
 	}
 
+	var m model.Users
 	var users []model.Users
-
-	m := model.Users{}
 	var userData string
 
 	for rows.Next() {
-		err := rows.Scan(&m.UserId, &m.Username, &m.FirstName, &m.LastName, &m.Status, &m.Authentication.Password, &userData)
+		err := rows.Scan(&m.UserId, &m.Username, &m.FirstName, &m.LastName, &m.Status, &m.CreatedDate, &m.Authentication.Password, &m.Authentication.RefreshToken, &userData)
 		if err != nil {
+			fmt.Println("[LOG] User_repository_impl - FindAll - fetch row :", err)
 			return nil, err
 		}
-		tmap := make(map[string]string)
-		for _, s := range strings.Split(userData, "##") {
-			data := strings.Split(s, "|")
-			tmap[data[0]] = data[1]
-		}
-		m.Data = tmap
 		m.Authentication.UserId = m.UserId
+
+		m.Authentication = model.UserAuthentication{}
+
+		fmt.Println(m.UserId, " -> ", userData, " -> ", len(userData))
+
+		//for _, s := range strings.Split(userData, "##") {
+		//	data := strings.Split(s, "|")
+		//	tmap[data[0]] = data[1]
+		//}
+		if len(userData) > 0 {
+			tmap := make(map[string]string)
+			if err := json.Unmarshal([]byte(userData), &tmap); err != nil {
+				return nil, err
+			}
+			m.Data = tmap
+		} else {
+			//m.Data = nil
+		}
 
 		users = append(users, m)
 	}
@@ -123,21 +137,9 @@ func (u *userRepositoryImpl) FindAll(ctx context.Context, tx *sql.Tx) (*[]model.
 func (u *userRepositoryImpl) FindByUsernameOrEmail(ctx context.Context, tx *sql.Tx, param string) (*model.Users, error) {
 	var SQL string
 	if helper.IsEmail(param) {
-
-		SQL = "select ud2.user_id, u.username, u.first_name, u.last_name, u.status, ua.password, u.created_date, string_agg(concat(ud.data_key ,'|', ud.data_value),'##') as user_data " +
-			"from user_data ud2 " +
-			"left join users u on u.user_id = ud2.user_id " +
-			"left join user_data ud on u.user_id = ud.user_id and ud.user_id = ud2.user_id " +
-			"left join user_authentication ua on ud2.user_id = ua.user_id " +
-			"where ud2.data_key = 'EMAIL' and ud2.data_value = $1 " +
-			"group by (ud2.user_id, u.username, u.first_name, u.last_name, u.status, ua.password, u.created_date);"
+		SQL = query.GetUserByEmail + ";"
 	} else {
-		SQL = "select u.user_id, u.username, u.first_name, u.last_name, u.status, ua.password, u.created_date, string_agg(concat(ud.data_key ,'|', ud.data_value),'##') as user_data " +
-			"from public.users u " +
-			"left join user_authentication ua on u.user_id = ua.user_id " +
-			"left join user_data ud on u.user_id = ud.user_id " +
-			"where u.username = $1 " +
-			"group by (u.user_id, u.username, u.first_name, u.last_name, u.status, ua.password, u.created_date);"
+		SQL = query.GetUserAll + "where data.username = $1 ;"
 	}
 
 	row, err := tx.QueryContext(ctx, SQL, param)
@@ -147,20 +149,52 @@ func (u *userRepositoryImpl) FindByUsernameOrEmail(ctx context.Context, tx *sql.
 		return nil, err
 	}
 
+	//user if else for only 1 row
 	if row.Next() {
 		user := model.Users{}
 		var userData string
-		err = row.Scan(&user.UserId, &user.Username, &user.FirstName, &user.LastName, &user.Status, &user.Authentication.Password, &user.CreatedDate, &userData)
+		err = row.Scan(&user.UserId, &user.Username, &user.FirstName, &user.LastName, &user.Status, &user.CreatedDate, &user.Authentication.Password, &user.Authentication.RefreshToken, &userData)
+		if err != nil {
+			return nil, err
+		}
 		user.Authentication.UserId = user.UserId
 		tmap := make(map[string]string)
-		for _, s := range strings.Split(userData, "##") {
-			data := strings.Split(s, "|")
-			tmap[data[0]] = data[1]
+		//for _, s := range strings.Split(userData, "##") {
+		//	data := strings.Split(s, "|")
+		//	tmap[data[0]] = data[1]
+		//}
+		if err := json.Unmarshal([]byte(userData), &tmap); err != nil {
+			return nil, err
 		}
 		user.Data = tmap
 		return &user, nil
 	}
 
-	return nil, nil
+	return nil, errors.New("Account data found")
 
+}
+
+func (u *userRepositoryImpl) GetListAccount(ctx context.Context, tx *sql.Tx) (map[string]bool, error) {
+	SQL := query.GetListAccount
+
+	rows, err := tx.QueryContext(ctx, SQL)
+	defer rows.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	resp := make(map[string]bool)
+	var item string
+
+	for rows.Next() {
+
+		err := rows.Scan(&item)
+		if err != nil {
+			return nil, err
+		}
+
+		resp[item] = true
+	}
+
+	return resp, nil
 }

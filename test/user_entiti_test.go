@@ -1,11 +1,15 @@
 package test
 
 import (
+	"context"
 	"fmt"
+	"github.com/MCPutro/Go-MyWallet/app"
 	"github.com/MCPutro/Go-MyWallet/entity/model"
+	"github.com/MCPutro/Go-MyWallet/repository"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"testing"
+	"time"
 )
 
 func Test_User(t *testing.T) {
@@ -45,4 +49,75 @@ func TestCheckIsEmail(t *testing.T) {
 	fmt.Println(newUUID.String())
 	fmt.Println(newUUID.String())
 	fmt.Println(uuid.New().String())
+}
+
+func TestMap(t *testing.T) {
+	userMap := make(map[string]model.Users)
+
+	userMap["duwa"] = model.Users{
+		UserId:      "1",
+		Username:    "1",
+		FirstName:   "1",
+		LastName:    "1",
+		CreatedDate: time.Time{},
+		Status:      "1",
+		Authentication: model.UserAuthentication{
+			UserId:       "1",
+			Password:     "11",
+			Token:        "11",
+			RefreshToken: "11",
+		},
+		Data: nil,
+	}
+
+	users, ok1 := userMap["satu"]
+
+	fmt.Println("1", ok1)
+	fmt.Println("2", users)
+
+	users2, ok2 := userMap["duwa"]
+
+	fmt.Println("1", ok2)
+	fmt.Println("2", users2)
+}
+
+func TestStructLagi(t *testing.T) {
+
+	users := model.Users{
+		UserId:         "",
+		Username:       "",
+		FirstName:      "",
+		LastName:       "",
+		CreatedDate:    time.Time{},
+		Status:         "",
+		Authentication: model.UserAuthentication{},
+		Data:           nil,
+	}
+
+	fmt.Println(users.Data)
+
+}
+
+func TestFindAllUser(t *testing.T) {
+
+	db, err := app.InitDatabase()
+
+	if err != nil {
+		fmt.Println("error : ", err)
+		return
+	}
+
+	//load all
+	tx, err := db.Begin()
+
+	userRepository := repository.NewUserRepository()
+
+	findAll, err := userRepository.FindAll(context.Background(), tx)
+
+	fmt.Println(findAll)
+
+	//userByUsernameOrEmail, err := userRepository.FindByUsernameOrEmail(context.Background(), tx, "akulup2a3")
+	//
+	//fmt.Println(userByUsernameOrEmail)
+
 }

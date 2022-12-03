@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"github.com/MCPutro/Go-MyWallet/app"
 	"github.com/MCPutro/Go-MyWallet/controller"
+	"github.com/MCPutro/Go-MyWallet/entity/model"
 	"github.com/MCPutro/Go-MyWallet/repository"
 	"github.com/MCPutro/Go-MyWallet/service"
 	"github.com/go-playground/validator/v10"
+	"log"
 	"os"
 )
 
@@ -41,54 +43,34 @@ func main() {
 
 }
 
-func main2() {
-
-	db, err := app.InitDatabase()
-
-	if err != nil {
-		fmt.Println("error : ", err)
-		return
-	}
-
-	//load all
-	tx, err := db.Begin()
-
-	userRepository := repository.NewUserRepository()
-
-	//all := userRepository.FindAll(context.Background(), tx)
-
-	userByUsernameOrEmail, err := userRepository.FindByUsernameOrEmail(context.Background(), tx, "akulup2a3")
-
-	fmt.Println(userByUsernameOrEmail)
-}
-
 func main1() {
-
-	jwtService := service.NewJwtService("goWallet", "emchepe")
-
 	validate := validator.New()
-	db, err := app.InitDatabase()
+	walletRepository := repository.NewWalletRepository()
+
+	ctx := context.Background()
+
+	firebase, err := app.InitFirebase(ctx)
 	if err != nil {
-		fmt.Println(err)
 		return
 	}
+	initDb, err := firebase.Database(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	database := initDb.NewRef("blogs")
 
-	userRepository := repository.NewUserRepository()
+	walletService := service.NewWalletService(validate, database, walletRepository)
 
-	service.NewUserService(userRepository, db, validate, jwtService)
+	wallet := model.Wallet{
+		UserId:   "123456789",
+		WalletId: 2,
+		Name:     "BNI",
+		Type:     "BANK",
+		IsActive: "Y",
+	}
 
-	//dummyNewUser := web.UserRegistration{
-	//	Username:  "akulupa4",
-	//	FirstName: "aku",
-	//	LastName:  "lupa",
-	//	Password:  "123456789",
-	//	Email:     "aku@lupa.oh",
-	//}
-	//
-	//err = userService.Registration(context.Background(), dummyNewUser)
-	//fmt.Println(err)
+	addWallet, err := walletService.AddWallet(ctx, &wallet)
+	fmt.Println(err)
+	fmt.Println(addWallet)
 
-	//err2 := userService.Login(context.Background(), "akulupa4", "1234567891")
-	//
-	//fmt.Println(err2)
 }

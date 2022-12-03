@@ -12,6 +12,7 @@ func NewRouter(UserController controller.UserController) *fiber.App {
 
 	userAPI.Post("/signup", UserController.Registration)
 	userAPI.Post("/signin", UserController.Login)
+	userAPI.Get("/all", UserController.ShowALl)
 
 	return app
 }

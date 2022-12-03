@@ -1,8 +1,8 @@
 package model
 
 type UserAuthentication struct {
-	UserId       string `json:"-"`
-	Password     string `json:"-"`
-	Token        string
-	RefreshToken string
+	UserId       string `json:"UserId,omitempty"`
+	Password     string `json:"Password,omitempty"`
+	Token        string `json:"Token,omitempty"`
+	RefreshToken string `json:"RefreshToken,omitempty"`
 }

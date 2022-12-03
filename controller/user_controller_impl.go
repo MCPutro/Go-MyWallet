@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"github.com/MCPutro/Go-MyWallet/entity/web"
 	"github.com/MCPutro/Go-MyWallet/service"
 	"github.com/gofiber/fiber/v2"
@@ -13,6 +12,16 @@ type userControllerImpl struct {
 
 func NewUserController(userService service.UserService) UserController {
 	return &userControllerImpl{UserService: userService}
+}
+
+func (u *userControllerImpl) ShowALl(c *fiber.Ctx) error {
+	findAll, err := u.UserService.FindAll(c.Context())
+
+	if err != nil {
+		return c.SendString(err.Error())
+	} else {
+		return c.JSON(findAll)
+	}
 }
 
 func (u *userControllerImpl) Login(c *fiber.Ctx) error {
@@ -50,7 +59,12 @@ func (u *userControllerImpl) Registration(c *fiber.Ctx) error {
 
 	resp, err := u.UserService.Registration(c.Context(), p)
 	if err != nil {
-		return c.SendString(fmt.Sprint("error :", err))
+		//return c.SendString(fmt.Sprint("error :", err))
+		return c.JSON(web.Response{
+			Status:  "ERROR",
+			Message: err.Error(),
+			Data:    nil,
+		})
 	} else {
 		return c.JSON(resp)
 	}

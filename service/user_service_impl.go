@@ -28,6 +28,21 @@ func NewUserService(userRepo repository.UserRepository, DB *sql.DB, validate *va
 	return &userServiceImpl{UserRepo: userRepo, DB: DB, Validate: validate, JwtService: jwtService}
 }
 
+func (u *userServiceImpl) FindAll(ctx context.Context) (*[]model.Users, error) {
+	conn, err := u.DB.Conn(ctx)
+	defer helper.ConnClose(conn)
+
+	beginTx, err := conn.BeginTx(ctx, nil)
+	defer helper.CommitOrRollback(err, beginTx)
+
+	findAll, err := u.UserRepo.FindAll(ctx, beginTx)
+	if err != nil {
+		return nil, err
+	}
+
+	return findAll, nil
+}
+
 func (u *userServiceImpl) Login(ctx context.Context, param string, password string) (*model.Users, error) {
 	conn, err := u.DB.Conn(ctx)
 	defer helper.ConnClose(conn)
@@ -74,12 +89,36 @@ func (u *userServiceImpl) Registration(ctx context.Context, userRegistration *we
 	}
 
 	conn, err := u.DB.Conn(ctx)
-	defer helper.ConnClose(conn)
-
 	beginTx, err := conn.BeginTx(ctx, nil)
-	defer helper.CommitOrRollback(err, beginTx)
+	defer func() {
+		helper.CommitOrRollback(err, beginTx)
+		helper.ConnClose(conn)
+	}()
 	if err != nil {
 		return nil, err
+	}
+
+	//validation data is exists or not
+	listAccount, err := u.UserRepo.GetListAccount(ctx, beginTx)
+	if err != nil {
+		return nil, err
+	} else {
+		fmt.Println(listAccount)
+
+		//cek username is already exists in db
+		var message []string
+		if listAccount[userRegistration.Username] == true {
+			message = append(message, "Username")
+		}
+		//cek email is already exists in db
+		if listAccount[userRegistration.Email] == true {
+			message = append(message, "Email")
+		}
+		//return message when username or email already use
+		if len(message) > 0 {
+			//fmt.Println(">>>message : ", strings.Join(message, " and "), "already use")
+			return nil, errors.New(strings.Join(message, " and ") + " already use")
+		}
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(userRegistration.Password), bcrypt.DefaultCost)
@@ -99,6 +138,10 @@ func (u *userServiceImpl) Registration(ctx context.Context, userRegistration *we
 
 	if userRegistration.Imei != "" {
 		newUser.Data["IMEI"] = userRegistration.Imei
+	}
+
+	if userRegistration.DeviceId != "" {
+		newUser.Data["DEVICE_ID"] = userRegistration.DeviceId
 	}
 
 	//save new user
