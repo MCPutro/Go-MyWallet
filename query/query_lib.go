@@ -36,4 +36,6 @@ const (
 
 	//GetWalletByUserId = "select w.user_id, w.wallet_id, w.wallet_name, w.type from public.wallets w where w.is_active = 'Y' and w.user_id = $1 order by w.wallet_id ASC;"
 	GetWalletByUserId = "select w.user_id, w.wallet_id, w.wallet_name, wt.wallet_code from public.wallets w join public.wallet_type wt on wt.wallet_code = w.type where w.is_active = 'Y' and w.user_id = $1 order by w.wallet_id ASC;"
+
+	GetActivityTypes = "select at.activity_type_id, at.type_code, at.type_name, at.category, at.sub_category_name\nfrom public.activity_type at\nwhere at.is_active = 'Y'\norder by at.type_code, at.category ASC"
 )

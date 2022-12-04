@@ -28,7 +28,11 @@ func main() {
 	walletService := service.NewWalletService(validate, db, walletRepository)
 	walletController := controller.NewWalletController(walletService)
 
-	newRouter := app.NewRouter(userController, walletController)
+	activityRepository := repository.NewActivityRepository()
+	activityService := service.NewActivityService(activityRepository, db)
+	activityController := controller.NewActivityController(activityService)
+
+	newRouter := app.NewRouter(userController, walletController, activityController)
 
 	PORT := os.Getenv("PORT")
 	if PORT == "" {

@@ -5,7 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func NewRouter(UserController controller.UserController, walletController controller.WalletController) *fiber.App {
+func NewRouter(UserController controller.UserController, walletController controller.WalletController, activityController controller.ActivityController) *fiber.App {
 	app := fiber.New()
 
 	userAPI := app.Group("/user")
@@ -19,6 +19,8 @@ func NewRouter(UserController controller.UserController, walletController contro
 	walletAPI.Post("/", walletController.AddWallet)
 	walletAPI.Get("/", walletController.GetWalletByUid)
 	walletAPI.Get("/type", walletController.GetWalletType)
+
+	app.Get("/activity", activityController.GetActivityTypes)
 
 	return app
 }

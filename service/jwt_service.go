@@ -13,7 +13,7 @@ type JwtService interface {
 }
 
 type jwtCustomClaim struct {
-	ID string
+	UID string
 	jwt.RegisteredClaims
 }
 
@@ -28,7 +28,7 @@ func NewJwtService(secretKey string, issuer string) JwtService {
 
 func (j *jwtServiceImpl) GenerateToken(UserId string) string {
 	claims := jwtCustomClaim{
-		ID: UserId,
+		UID: UserId,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    j.issuer,
 			ExpiresAt: jwt.NewNumericDate(time.Now().AddDate(0, 0, 1)),
