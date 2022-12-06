@@ -17,10 +17,13 @@ func NewRouter(UserController controller.UserController, walletController contro
 	walletAPI := app.Group("/wallet")
 
 	walletAPI.Post("/", walletController.AddWallet)
-	walletAPI.Get("/", walletController.GetWalletByUid)
+	walletAPI.Post("/update", walletController.UpdateWallet)
+	walletAPI.Get("/uid", walletController.GetWalletByUID)
+	walletAPI.Get("/id", walletController.GetWalletId)
 	walletAPI.Get("/type", walletController.GetWalletType)
 
-	app.Get("/activity", activityController.GetActivityTypes)
+	app.Get("/activityTypes", activityController.GetActivityTypes)
+	app.Post("/activity", activityController.AddActivity)
 
 	return app
 }

@@ -7,8 +7,9 @@ type Response struct {
 }
 
 type ResponseActivityType struct {
-	Status  string
-	Message interface{} `json:"Message,omitempty"`
-	Income  interface{} `json:"Income,omitempty"`
-	Expense interface{} `json:"Expense,omitempty"`
+	Status   string
+	Message  interface{} `json:"Message,omitempty"`
+	Income   interface{} `json:"IncomeCategory,omitempty"`
+	Expense  interface{} `json:"ExpenseCategory,omitempty"`
+	Transfer interface{} `json:"TransferCategory,omitempty"`
 }

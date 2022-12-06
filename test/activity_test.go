@@ -37,15 +37,26 @@ func TestKedua(t *testing.T) {
 	}
 
 	activityRepository := repository.NewActivityRepository()
-	activityService := service.NewActivityService(activityRepository, db)
+	activityService := service.NewActivityService(activityRepository, repository.NewWalletRepository(), db)
 
 	activityService.GetActivityType(context.Background())
 
 }
 
-func TestK(t *testing.T) {
-	var k string = "a"
-	var K string = "A"
+func TestGetActCategoryById(t *testing.T) {
+	db, err := app.InitDatabase()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-	fmt.Println(k, K, k == K)
+	walletRepository := repository.NewWalletRepository()
+	activityRepository := repository.NewActivityRepository()
+	activityService := service.NewActivityService(activityRepository, walletRepository, db)
+
+	responseActivityType, err := activityService.GetActivityTypeById(context.Background(), 23)
+
+	fmt.Println(err)
+	fmt.Println(responseActivityType)
+
 }

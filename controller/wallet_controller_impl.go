@@ -1,11 +1,13 @@
 package controller
 
 import (
+	"fmt"
 	"github.com/MCPutro/Go-MyWallet/entity/model"
 	"github.com/MCPutro/Go-MyWallet/entity/web"
 	"github.com/MCPutro/Go-MyWallet/helper"
 	"github.com/MCPutro/Go-MyWallet/service"
 	"github.com/gofiber/fiber/v2"
+	"strconv"
 )
 
 type walletControllerImpl struct {
@@ -34,7 +36,7 @@ func (w *walletControllerImpl) GetWalletType(c *fiber.Ctx) error {
 	//}
 }
 
-func (w *walletControllerImpl) GetWalletByUid(c *fiber.Ctx) error {
+func (w *walletControllerImpl) GetWalletByUID(c *fiber.Ctx) error {
 	userid := c.Get("userid")
 	walletsByUserId, err := w.walletService.GetWalletByUserId(c.Context(), userid)
 
@@ -54,6 +56,38 @@ func (w *walletControllerImpl) GetWalletByUid(c *fiber.Ctx) error {
 	//		Data:    walletsByUserId,
 	//	})
 	//}
+}
+
+func (w *walletControllerImpl) GetWalletId(c *fiber.Ctx) error {
+	userid := c.Get("userid")
+	param := c.Get("wallet")
+
+	walletId, err := strconv.ParseUint(param, 10, 32)
+	if err != nil {
+		return helper.PrintResponse(err, nil, c)
+	}
+
+	fmt.Println(userid, walletId)
+
+	getWalletById, err := w.walletService.GetWalletById(c.Context(), userid, uint32(walletId))
+	return helper.PrintResponse(err, getWalletById, c)
+}
+
+func (w *walletControllerImpl) UpdateWallet(c *fiber.Ctx) error {
+	body := new(model.Wallet)
+	//body.UserId = userid
+
+	if err := c.BodyParser(body); err != nil {
+		return c.JSON(web.Response{
+			Status:  "ERROR",
+			Message: err.Error(),
+			Data:    nil,
+		})
+	}
+
+	wallet, err := w.walletService.UpdateWallet(c.Context(), body)
+
+	return helper.PrintResponse(err, wallet, c)
 }
 
 func (w *walletControllerImpl) AddWallet(c *fiber.Ctx) error {
