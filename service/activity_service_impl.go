@@ -67,13 +67,14 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 			}
 
 			return &web.ActivityResponse{
-				ActivityId:   activitySave.ActivityId,
-				Type:         category.CategoryName,
-				Category:     category.SubCategory[0].CategoryName,
-				WalletIdFrom: activitySave.WalletIdFrom,
-				WalletIdTo:   activitySave.WalletIdTo,
-				ActivityDate: activitySave.ActivityDate,
-				Amount:       updateAmount,
+				ActivityId:       activitySave.ActivityId,
+				Type:             category.CategoryName,
+				Category:         category.SubCategory[0].CategoryName,
+				WalletIdFrom:     activitySave.WalletIdFrom,
+				WalletIdTo:       activitySave.WalletIdTo,
+				ActivityDate:     activitySave.ActivityDate,
+				AmountActivity:   activity.Amount,
+				AmountWalletFrom: updateAmount,
 			}, nil
 		} else {
 			//transfer own wallet
@@ -93,6 +94,7 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 				WalletIdFrom:     activitySave.WalletIdFrom,
 				WalletIdTo:       activitySave.WalletIdTo,
 				ActivityDate:     activitySave.ActivityDate,
+				AmountActivity:   activity.Amount,
 				AmountWalletFrom: updateAmountFrom,
 				AmountWalletTo:   updateAmountTo,
 			}, nil

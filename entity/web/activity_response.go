@@ -9,7 +9,7 @@ type ActivityResponse struct {
 	WalletIdFrom     uint      `json:"WalletIdFrom"`
 	WalletIdTo       uint      `json:"WalletIdTo"`
 	ActivityDate     time.Time `json:"ActivityDate"`
-	Amount           uint32    `json:"Amount,omitempty"`
+	AmountActivity   int32     `json:"AmountActivity,omitempty"`
 	AmountWalletFrom uint32    `json:"AmountWalletFrom,omitempty"`
 	AmountWalletTo   uint32    `json:"AmountWalletTo,omitempty"`
 }
