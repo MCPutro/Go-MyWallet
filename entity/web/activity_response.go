@@ -3,11 +3,13 @@ package web
 import "time"
 
 type ActivityResponse struct {
-	ActivityId   int       `json:"ActivityId"`
-	Type         string    `json:"Type"`
-	CategoryId   string    `json:"CategoryId"`
-	WalletIdFrom int       `json:"WalletIdFrom"`
-	WalletIdTo   int       `json:"WalletIdTo"`
-	ActivityDate time.Time `json:"ActivityDate"`
-	Amount       int       `json:"Amount"`
+	ActivityId       uint8     `json:"ActivityId"`
+	Type             string    `json:"Type"`
+	Category         string    `json:"Category"`
+	WalletIdFrom     uint      `json:"WalletIdFrom"`
+	WalletIdTo       uint      `json:"WalletIdTo"`
+	ActivityDate     time.Time `json:"ActivityDate"`
+	Amount           uint32    `json:"Amount,omitempty"`
+	AmountWalletFrom uint32    `json:"AmountWalletFrom,omitempty"`
+	AmountWalletTo   uint32    `json:"AmountWalletTo,omitempty"`
 }

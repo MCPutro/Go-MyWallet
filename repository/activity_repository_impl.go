@@ -101,6 +101,8 @@ func (a *activityRepositoryImpl) GetActivityTypeById(ctx context.Context, tx *sq
 			return nil, err
 		}
 
+		category.SubCategory = append(category.SubCategory, subCategory)
+
 		return &category, nil
 	}
 

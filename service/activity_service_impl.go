@@ -50,7 +50,7 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 	activity.Period = activity.ActivityDate.Format("2006-01")
 
 	//save data activity
-	_, err = a.activityRepo.Save(ctx, beginTx, activity)
+	activitySave, err := a.activityRepo.Save(ctx, beginTx, activity)
 	if err != nil {
 		return nil, err
 	} else {
@@ -61,35 +61,46 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 		}
 
 		if category.Multiplier == 1 || category.Multiplier == -1 { //income = 1 ; expense = -1
-			err = a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdFrom, activity.UserId, activity.Amount*category.Multiplier)
+			updateAmount, err := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdFrom, activity.UserId, activity.Amount*category.Multiplier)
 			if err != nil {
 				return nil, err
 			}
+
+			return &web.ActivityResponse{
+				ActivityId:   activitySave.ActivityId,
+				Type:         category.CategoryName,
+				Category:     category.SubCategory[0].CategoryName,
+				WalletIdFrom: activitySave.WalletIdFrom,
+				WalletIdTo:   activitySave.WalletIdTo,
+				ActivityDate: activitySave.ActivityDate,
+				Amount:       updateAmount,
+			}, nil
 		} else {
 			//transfer own wallet
-			err = a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdFrom, activity.UserId, activity.Amount*-1)
+			updateAmountFrom, err := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdFrom, activity.UserId, activity.Amount*-1)
 			if err != nil {
 				return nil, err
 			}
-			err = a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdTo, activity.UserId, activity.Amount*1)
+			updateAmountTo, err := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdTo, activity.UserId, activity.Amount*1)
 			if err != nil {
 				return nil, err
 			}
-		}
 
-		//web.ActivityResponse{
-		//	ActivityId:   save.ActivityId,
-		//	Type:         category.CategoryName,
-		//	CategoryId:   category.SubCategory,
-		//	WalletIdFrom: 0,
-		//	WalletIdTo:   0,
-		//	ActivityDate: time.Time{},
-		//	Amount:       0,
-		//}
+			return &web.ActivityResponse{
+				ActivityId:       activitySave.ActivityId,
+				Type:             category.CategoryName,
+				Category:         category.SubCategory[0].CategoryName,
+				WalletIdFrom:     activitySave.WalletIdFrom,
+				WalletIdTo:       activitySave.WalletIdTo,
+				ActivityDate:     activitySave.ActivityDate,
+				AmountWalletFrom: updateAmountFrom,
+				AmountWalletTo:   updateAmountTo,
+			}, nil
+		}
 	}
 
 	//return activity with id
-	return nil, nil
+	return nil, err
 }
 
 func (a *activityServiceImpl) GetActivityType(ctx context.Context) (*web.ResponseActivityType, error) {

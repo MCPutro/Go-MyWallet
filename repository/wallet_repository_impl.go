@@ -11,15 +11,17 @@ import (
 
 type walletRepositoryImpl struct{}
 
-func (w *walletRepositoryImpl) AddAmount(ctx context.Context, tx *sql.Tx, walletId uint, uid string, amount int32) error {
-	queryUpdate := "UPDATE public.wallets SET amount = (amount+$2) WHERE wallet_id = $1 and user_id = $3;"
+func (w *walletRepositoryImpl) AddAmount(ctx context.Context, tx *sql.Tx, walletId uint, uid string, amount int32) (uint32, error) {
+	queryUpdate := "UPDATE public.wallets SET amount = (amount+$2) WHERE wallet_id = $1 and user_id = $3 returning amount;"
 
-	_, err := tx.ExecContext(ctx, queryUpdate, walletId, amount, uid)
+	//_, err := tx.ExecContext(ctx, queryUpdate, walletId, amount, uid)
+	var updateAmount uint32 = 0
+	err := tx.QueryRowContext(ctx, queryUpdate, walletId, amount, uid).Scan(&updateAmount)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return updateAmount, nil
 }
 
 func (w *walletRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, newWallet *model.Wallet) (*model.Wallet, error) {
