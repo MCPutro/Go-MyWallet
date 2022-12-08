@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"github.com/MCPutro/Go-MyWallet/entity/model"
 	"github.com/MCPutro/Go-MyWallet/entity/web"
 	"github.com/MCPutro/Go-MyWallet/helper"
@@ -37,6 +38,8 @@ func (a *activityControllerImpl) AddActivity(c *fiber.Ctx) error {
 			Data:    nil,
 		})
 	}
+
+	fmt.Println(">>>", body)
 
 	activity, err := a.activityService.AddActivity(c.Context(), body)
 	return helper.PrintResponse(err, activity, c)

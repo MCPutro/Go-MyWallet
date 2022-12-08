@@ -3,13 +3,13 @@ package model
 import "time"
 
 type Activity struct {
-	ActivityId uint8 //increment db
-	UserId     string
-	//Type         string //income, expense or transfer
-	WalletIdFrom uint
-	WalletIdTo   uint
+	ActivityId   uint8 //increment db
+	UserId       string
+	WalletIdFrom uint32
+	WalletIdTo   uint32
 	CategoryId   uint
 	Period       string
 	ActivityDate time.Time
-	Amount       int32
+	Nominal      uint32
+	Desc         string
 }

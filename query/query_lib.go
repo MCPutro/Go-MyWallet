@@ -34,8 +34,19 @@ const (
 
 	GetWalletType = "select wt.wallet_code, wt.wallet_name from public.wallet_type wt;"
 
-	//GetWalletByUserId = "select w.user_id, w.wallet_id, w.wallet_name, w.type from public.wallets w where w.is_active = 'Y' and w.user_id = $1 order by w.wallet_id ASC;"
-	GetWalletById = "select w.user_id, w.wallet_id, w.wallet_name, wt.wallet_name, w.amount from public.wallets w join public.wallet_type wt on wt.wallet_code = w.type where w.is_active = 'Y' and %s order by w.wallet_id ASC ;" //w.user_id = $1
+	GetWalletById = "select w.user_id, w.wallet_id, w.wallet_name, wt.wallet_name, w.amount from public.wallets w join public.wallet_type wt on wt.wallet_code = w.type " +
+		"where w.is_active = 'Y' and %s order by w.wallet_id ASC ;" //w.user_id = $1
 
-	GetActivityTypes = "select data.type, data.activity_type_name, data.category, data.category_id as sub_category_code, data.sub_category_name, data.multiplier\nfrom (select ac.category_id, ac.type,a.activity_type_name, ac.category, ac.sub_category_name, a.multiplier, ac.is_active\n      from public.activity_category ac\n               inner join activity_type a on a.activity_type_code = ac.type\n      order by ac.type, ac.category ASC) as data\n"
+	GetActivityTypes = "select data.type, data.activity_type_name, data.category, data.category_id as sub_category_code, data.sub_category_name, data.multiplier\n" +
+		"from (select ac.category_id, ac.type,a.activity_type_name, ac.category, ac.sub_category_name, a.multiplier, ac.is_active\n " +
+		"from public.activity_category ac\n " +
+		"inner join activity_type a on a.activity_type_code = ac.type\n " +
+		"order by ac.type, ac.category ASC) as data\n "
+
+	GetActivityList = "SELECT t.activity_id, t.user_id, t.wallet_id_from, t.wallet_id_to, t.period, t.activity_date, a.activity_type_name, ac.sub_category_name " +
+		"FROM public.user_activity t " +
+		"inner join activity_category ac on ac.category_id = t.category_id " +
+		"inner join activity_type a on a.activity_type_code = ac.type" +
+		"where %s " +
+		"ORDER BY t.activity_date DESC ;"
 )

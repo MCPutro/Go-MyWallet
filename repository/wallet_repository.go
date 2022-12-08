@@ -14,7 +14,7 @@ type WalletRepository interface {
 	// postgreSQL
 	Save(ctx context.Context, tx *sql.Tx, newWallet *model.Wallet) (*model.Wallet, error)
 	Update(ctx context.Context, tx *sql.Tx, newWallet *model.Wallet) (*model.Wallet, error)
-	AddAmount(ctx context.Context, tx *sql.Tx, walletId uint, uid string, amount int32) (uint32, error)
+	AddAmount(ctx context.Context, tx *sql.Tx, walletId uint32, uid string, amount uint32, multiplier int) (uint32, error)
 	FindByUserId(ctx context.Context, tx *sql.Tx, uid string) (*[]model.Wallet, error)
 	FindById(ctx context.Context, tx *sql.Tx, userid string, walletId uint32) (*model.Wallet, error)
 	GetWalletType(ctx context.Context, tx *sql.Tx) (map[string]string, error)

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"github.com/MCPutro/Go-MyWallet/entity/model"
 	"github.com/MCPutro/Go-MyWallet/entity/web"
 	"github.com/MCPutro/Go-MyWallet/helper"
@@ -27,7 +28,7 @@ func (a *activityServiceImpl) GetActivityTypeById(ctx context.Context, categoryI
 		return nil, err
 	}
 
-	activityCategory, err := a.activityRepo.GetActivityTypeById(ctx, beginTx, categoryId)
+	activityCategory, err := a.activityRepo.FindActivityTypeById(ctx, beginTx, categoryId)
 	if err != nil {
 		return nil, err
 	}
@@ -49,60 +50,66 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 	//parse ActivityDate to period yyyy-mm
 	activity.Period = activity.ActivityDate.Format("2006-01")
 
+	//get detail category
+	category, err := a.activityRepo.FindActivityTypeById(ctx, beginTx, activity.CategoryId)
+	if err != nil {
+		return nil, err
+	}
+
+	//check current balance wallet from is greater than nominal activity
+	walletFrom, err := a.walletRepository.FindById(ctx, beginTx, activity.UserId, activity.WalletIdFrom)
+	if walletFrom.Amount < activity.Nominal && category.Multiplier == -1 {
+		return nil, errors.New("balance not enough")
+	}
+
 	//save data activity
 	activitySave, err := a.activityRepo.Save(ctx, beginTx, activity)
 	if err != nil {
 		return nil, err
 	} else {
-		//get detail category
-		category, err2 := a.activityRepo.GetActivityTypeById(ctx, beginTx, activity.CategoryId)
-		if err2 != nil {
-			return nil, err2
-		}
-
 		if category.Multiplier == 1 || category.Multiplier == -1 { //income = 1 ; expense = -1
-			updateAmount, err := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdFrom, activity.UserId, activity.Amount*category.Multiplier)
+			updateAmount, err := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdFrom, activity.UserId, activity.Nominal, category.Multiplier)
 			if err != nil {
 				return nil, err
 			}
 
 			return &web.ActivityResponse{
-				ActivityId:       activitySave.ActivityId,
-				Type:             category.CategoryName,
-				Category:         category.SubCategory[0].CategoryName,
-				WalletIdFrom:     activitySave.WalletIdFrom,
-				WalletIdTo:       activitySave.WalletIdTo,
-				ActivityDate:     activitySave.ActivityDate,
-				AmountActivity:   activity.Amount,
-				AmountWalletFrom: updateAmount,
+				ActivityId:         activitySave.ActivityId,
+				Type:               category.Type, //category.CategoryName,
+				Category:           category.SubCategory[0].CategoryName,
+				WalletIdFrom:       activitySave.WalletIdFrom,
+				WalletIdTo:         activitySave.WalletIdTo,
+				ActivityDate:       activitySave.ActivityDate,
+				Nominal:            activity.Nominal,
+				AmountWalletIdFrom: updateAmount,
 			}, nil
 		} else {
 			//transfer own wallet
-			updateAmountFrom, err := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdFrom, activity.UserId, activity.Amount*-1)
+			updateAmountFrom, err := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdFrom, activity.UserId, activity.Nominal, category.Multiplier)
 			if err != nil {
 				return nil, err
 			}
-			updateAmountTo, err := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdTo, activity.UserId, activity.Amount*1)
-			if err != nil {
-				return nil, err
+			updateAmountTo, err2 := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdTo, activity.UserId, activity.Nominal, category.Multiplier)
+			if err2 != nil {
+				return nil, err2
 			}
 
 			return &web.ActivityResponse{
-				ActivityId:       activitySave.ActivityId,
-				Type:             category.CategoryName,
-				Category:         category.SubCategory[0].CategoryName,
-				WalletIdFrom:     activitySave.WalletIdFrom,
-				WalletIdTo:       activitySave.WalletIdTo,
-				ActivityDate:     activitySave.ActivityDate,
-				AmountActivity:   activity.Amount,
-				AmountWalletFrom: updateAmountFrom,
-				AmountWalletTo:   updateAmountTo,
+				ActivityId:         activitySave.ActivityId,
+				Type:               category.CategoryName,
+				Category:           category.SubCategory[0].CategoryName,
+				WalletIdFrom:       activitySave.WalletIdFrom,
+				WalletIdTo:         activitySave.WalletIdTo,
+				ActivityDate:       activitySave.ActivityDate,
+				Nominal:            activity.Nominal,
+				AmountWalletIdFrom: updateAmountFrom,
+				AmountWalletIdTo:   updateAmountTo,
 			}, nil
 		}
 	}
 
 	//return activity with id
-	return nil, err
+	//return nil, err
 }
 
 func (a *activityServiceImpl) GetActivityType(ctx context.Context) (*web.ResponseActivityType, error) {
@@ -117,7 +124,7 @@ func (a *activityServiceImpl) GetActivityType(ctx context.Context) (*web.Respons
 		return nil, err
 	}
 
-	activityTypes, err := a.activityRepo.GetActivityTypes(ctx, beginTx)
+	activityTypes, err := a.activityRepo.FindActivityTypes(ctx, beginTx)
 	if err != nil {
 		return nil, err
 	}

@@ -21,7 +21,7 @@ func TestGetActType(t *testing.T) {
 
 	activityRepository := repository.NewActivityRepository()
 
-	_, err = activityRepository.GetActivityTypes(context.Background(), begin)
+	_, err = activityRepository.FindActivityTypes(context.Background(), begin)
 
 	if err != nil {
 		begin.Rollback()

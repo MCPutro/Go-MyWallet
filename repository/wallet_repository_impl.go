@@ -11,8 +11,13 @@ import (
 
 type walletRepositoryImpl struct{}
 
-func (w *walletRepositoryImpl) AddAmount(ctx context.Context, tx *sql.Tx, walletId uint, uid string, amount int32) (uint32, error) {
-	queryUpdate := "UPDATE public.wallets SET amount = (amount+$2) WHERE wallet_id = $1 and user_id = $3 returning amount;"
+func (w *walletRepositoryImpl) AddAmount(ctx context.Context, tx *sql.Tx, walletId uint32, uid string, amount uint32, multiplier int) (uint32, error) {
+	var queryUpdate string
+	if multiplier == -1 {
+		queryUpdate = fmt.Sprintf("UPDATE public.wallets SET amount = (amount %s $2) WHERE wallet_id = $1 and user_id = $3 returning amount;", "-")
+	} else {
+		queryUpdate = fmt.Sprintf("UPDATE public.wallets SET amount = (amount %s $2) WHERE wallet_id = $1 and user_id = $3 returning amount;", "+")
+	}
 
 	//_, err := tx.ExecContext(ctx, queryUpdate, walletId, amount, uid)
 	var updateAmount uint32 = 0
@@ -59,7 +64,7 @@ func (w *walletRepositoryImpl) Update(ctx context.Context, tx *sql.Tx, newWallet
 
 func (w *walletRepositoryImpl) FindByUserId(ctx context.Context, tx *sql.Tx, uid string) (*[]model.Wallet, error) {
 	querySQL := fmt.Sprintf(query.GetWalletById, "w.user_id = $1")
-	fmt.Println(querySQL)
+	//fmt.Println(querySQL)
 
 	rows, err := tx.QueryContext(ctx, querySQL, uid)
 	defer rows.Close()
@@ -89,7 +94,7 @@ func (w *walletRepositoryImpl) FindByUserId(ctx context.Context, tx *sql.Tx, uid
 
 func (w *walletRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, userid string, walletId uint32) (*model.Wallet, error) {
 	querySQL := fmt.Sprintf(query.GetWalletById, "w.wallet_id = $1 and w.user_id = $2 ")
-	fmt.Println(querySQL)
+	//fmt.Println(querySQL)
 
 	rows, err := tx.QueryContext(ctx, querySQL, walletId, userid)
 	defer rows.Close()

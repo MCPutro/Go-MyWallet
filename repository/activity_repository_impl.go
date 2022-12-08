@@ -3,11 +3,31 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/MCPutro/Go-MyWallet/entity/model"
 	"github.com/MCPutro/Go-MyWallet/query"
 )
 
 type activityRepositoryImpl struct {
+}
+
+func (a *activityRepositoryImpl) FindByUserId(ctx context.Context, tx *sql.Tx, userId string) (*[]model.Activity, error) {
+
+	querySQL := fmt.Sprintf(query.GetActivityList, "t.user_id = $1")
+
+	rows, err := tx.QueryContext(ctx, querySQL, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp []model.Activity = nil
+	var item model.Activity
+
+	for rows.Next() {
+		rows.Scan(&item.ActivityId, &item.UserId, &item.WalletIdFrom, &item.WalletIdTo, &item.Period, &item.ActivityDate)
+	}
+
+	return &resp, nil
 }
 
 func (a *activityRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, act *model.Activity) (*model.Activity, error) {
@@ -17,7 +37,7 @@ func (a *activityRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, act *mode
 
 	var insertId uint8
 	//result, err := tx.ExecContext(ctx, SQL, act.UserId, act.CategoryId, act.WalletIdFrom, act.WalletIdTo, act.Period, act.ActivityDate, act.Amount)
-	err := tx.QueryRowContext(ctx, SQL, act.UserId, act.CategoryId, act.WalletIdFrom, act.WalletIdTo, act.Period, act.ActivityDate, act.Amount).Scan(&insertId)
+	err := tx.QueryRowContext(ctx, SQL, act.UserId, act.CategoryId, act.WalletIdFrom, act.WalletIdTo, act.Period, act.ActivityDate, act.Nominal).Scan(&insertId)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +49,7 @@ func (a *activityRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, act *mode
 	return act, nil
 }
 
-func (a *activityRepositoryImpl) GetActivityTypes(ctx context.Context, tx *sql.Tx) (map[string]map[string]map[uint]string, error) {
+func (a *activityRepositoryImpl) FindActivityTypes(ctx context.Context, tx *sql.Tx) (map[string]map[string]map[uint]string, error) {
 
 	SQL := query.GetActivityTypes + " where data.is_active = 'Y';"
 
@@ -81,7 +101,7 @@ func (a *activityRepositoryImpl) GetActivityTypes(ctx context.Context, tx *sql.T
 	return resp, nil
 }
 
-func (a *activityRepositoryImpl) GetActivityTypeById(ctx context.Context, tx *sql.Tx, categoryId uint) (*model.ActivityCategory, error) {
+func (a *activityRepositoryImpl) FindActivityTypeById(ctx context.Context, tx *sql.Tx, categoryId uint) (*model.ActivityCategory, error) {
 
 	SQL := query.GetActivityTypes + " where data.is_active = 'Y' and data.category_id = $1 ;"
 
@@ -96,7 +116,7 @@ func (a *activityRepositoryImpl) GetActivityTypeById(ctx context.Context, tx *sq
 		var subCategory model.ActivityCategory
 		var temp string
 		//err = rows.Scan(&category.SubCategoryCode, &temp, &temp, &category.CategoryName, &category.CategoryName, &category.Multiplier)
-		err = rows.Scan(&temp, &temp, &category.CategoryName, &subCategory.CategoryCode, &subCategory.CategoryName, &category.Multiplier)
+		err = rows.Scan(&temp, &category.Type, &category.CategoryName, &subCategory.CategoryCode, &subCategory.CategoryName, &category.Multiplier)
 		if err != nil {
 			return nil, err
 		}
