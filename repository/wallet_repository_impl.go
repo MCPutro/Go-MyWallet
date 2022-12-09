@@ -11,9 +11,9 @@ import (
 
 type walletRepositoryImpl struct{}
 
-func (w *walletRepositoryImpl) AddAmount(ctx context.Context, tx *sql.Tx, walletId uint32, uid string, amount uint32, multiplier int) (uint32, error) {
+func (w *walletRepositoryImpl) AddAmount(ctx context.Context, tx *sql.Tx, walletId uint32, uid string, amount uint32, category string) (uint32, error) {
 	var queryUpdate string
-	if multiplier == -1 {
+	if category == "EXP" {
 		queryUpdate = fmt.Sprintf("UPDATE public.wallets SET amount = (amount %s $2) WHERE wallet_id = $1 and user_id = $3 returning amount;", "-")
 	} else {
 		queryUpdate = fmt.Sprintf("UPDATE public.wallets SET amount = (amount %s $2) WHERE wallet_id = $1 and user_id = $3 returning amount;", "+")
@@ -31,11 +31,11 @@ func (w *walletRepositoryImpl) AddAmount(ctx context.Context, tx *sql.Tx, wallet
 
 func (w *walletRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, newWallet *model.Wallet) (*model.Wallet, error) {
 	//queryInsert := "INSERT INTO public.wallets (user_id, wallet_name, type) VALUES ($1, $2, $3);"
-	queryInsert := "INSERT INTO public.wallets (user_id, wallet_name, type) VALUES ($1, $2, $3) RETURNING wallet_id;"
+	queryInsert := "INSERT INTO public.wallets (user_id, wallet_name, type, amount) VALUES ($1, $2, $3, $4) RETURNING wallet_id;"
 
 	//result, err := tx.ExecContext(ctx, queryInsert, newWallet.UserId, newWallet.Name, newWallet.Type)
-	var insertId uint
-	err := tx.QueryRowContext(ctx, queryInsert, newWallet.UserId, newWallet.Name, newWallet.Type).Scan(&insertId)
+	var insertId uint32
+	err := tx.QueryRowContext(ctx, queryInsert, newWallet.UserId, newWallet.Name, newWallet.Type, newWallet.Amount).Scan(&insertId)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (w *walletRepositoryImpl) Update(ctx context.Context, tx *sql.Tx, newWallet
 	return newWallet, nil
 }
 
-func (w *walletRepositoryImpl) FindByUserId(ctx context.Context, tx *sql.Tx, uid string) (*[]model.Wallet, error) {
+func (w *walletRepositoryImpl) FindByUserId(ctx context.Context, tx *sql.Tx, uid string) ([]*model.Wallet, error) {
 	querySQL := fmt.Sprintf(query.GetWalletById, "w.user_id = $1")
 	//fmt.Println(querySQL)
 
@@ -72,21 +72,21 @@ func (w *walletRepositoryImpl) FindByUserId(ctx context.Context, tx *sql.Tx, uid
 		return nil, err
 	}
 
-	var walletList []model.Wallet = nil
-	var tWallet model.Wallet
+	var walletList []*model.Wallet = nil
 
 	for rows.Next() {
+		var tWallet model.Wallet
 		err := rows.Scan(&tWallet.UserId, &tWallet.WalletId, &tWallet.Name, &tWallet.Type, &tWallet.Amount)
 		if err != nil {
 			fmt.Println("fetch data wallet :", err)
 			return nil, err
 		}
 
-		walletList = append(walletList, tWallet)
+		walletList = append(walletList, &tWallet)
 	}
 
 	if len(walletList) > 0 {
-		return &walletList, nil
+		return walletList, nil
 	}
 
 	return nil, errors.New("wallet list is empty")
@@ -115,7 +115,7 @@ func (w *walletRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, userid 
 		return &tWallet, nil
 	}
 
-	return nil, errors.New("wallet list is empty")
+	return nil, nil
 }
 
 func (w *walletRepositoryImpl) GetWalletType(ctx context.Context, tx *sql.Tx) (map[string]string, error) {
@@ -142,6 +142,18 @@ func (w *walletRepositoryImpl) GetWalletType(ctx context.Context, tx *sql.Tx) (m
 	}
 
 	return resp, nil
+}
+
+func (w *walletRepositoryImpl) DeleteById(ctx context.Context, tx *sql.Tx, userid string, walletId uint32) error {
+
+	querySQL := "delete from public.wallets where user_id = $1 and wallet_id = $2 ;"
+
+	_, err := tx.ExecContext(ctx, querySQL, userid, walletId)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func NewWalletRepository() WalletRepository {

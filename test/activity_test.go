@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/MCPutro/Go-MyWallet/app"
+	"github.com/MCPutro/Go-MyWallet/entity/model"
 	"github.com/MCPutro/Go-MyWallet/repository"
 	"github.com/MCPutro/Go-MyWallet/service"
 	"testing"
@@ -21,7 +22,11 @@ func TestGetActType(t *testing.T) {
 
 	activityRepository := repository.NewActivityRepository()
 
-	_, err = activityRepository.FindActivityTypes(context.Background(), begin)
+	s, err := activityRepository.FindActivityCategory(context.Background(), begin)
+
+	for _, category := range s {
+		fmt.Println(category)
+	}
 
 	if err != nil {
 		begin.Rollback()
@@ -39,11 +44,11 @@ func TestKedua(t *testing.T) {
 	activityRepository := repository.NewActivityRepository()
 	activityService := service.NewActivityService(activityRepository, repository.NewWalletRepository(), db)
 
-	activityService.GetActivityType(context.Background())
+	activityService.GetActivityCategory(context.Background())
 
 }
 
-func TestGetActCategoryById(t *testing.T) {
+func TestGetActCategoryByIdService(t *testing.T) {
 	db, err := app.InitDatabase()
 	if err != nil {
 		fmt.Println(err)
@@ -54,9 +59,56 @@ func TestGetActCategoryById(t *testing.T) {
 	activityRepository := repository.NewActivityRepository()
 	activityService := service.NewActivityService(activityRepository, walletRepository, db)
 
-	responseActivityType, err := activityService.GetActivityTypeById(context.Background(), 23)
+	responseActivityType, err := activityService.GetActivityCategoryById(context.Background(), 23)
 
 	fmt.Println(err)
 	fmt.Println(responseActivityType)
 
+}
+
+func BenchmarkAppendStruct(b *testing.B) {
+	var a []model.ActivityCategory
+
+	for i := 0; i < b.N; i++ {
+		a = append(a, model.ActivityCategory{})
+	}
+
+}
+
+func BenchmarkAppendPointer(b *testing.B) {
+	var a []*model.ActivityCategory
+
+	for i := 0; i < b.N; i++ {
+		a = append(a, &model.ActivityCategory{})
+	}
+
+}
+
+func TestGetActCategoryByIdRepository(t *testing.T) {
+	ctx := context.Background()
+
+	db, err := app.InitDatabase()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	tx, err := db.Begin()
+
+	//walletRepository := repository.NewWalletRepository()
+	activityRepository := repository.NewActivityRepository()
+	//activityService := service.NewActivityService(activityRepository, walletRepository, db)
+
+	categories, err := activityRepository.FindActivityCategoryById(ctx, tx, 5)
+
+	fmt.Println(categories)
+
+	//for i, category := range categories {
+	//	fmt.Println(i, category)
+	//}
+
+	if err != nil {
+		tx.Rollback()
+	}
+	tx.Commit()
 }

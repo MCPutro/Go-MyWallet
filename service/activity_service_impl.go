@@ -16,7 +16,7 @@ type activityServiceImpl struct {
 	db               *sql.DB
 }
 
-func (a *activityServiceImpl) GetActivityTypeById(ctx context.Context, categoryId uint) (*model.ActivityCategory, error) {
+func (a *activityServiceImpl) GetActivityList(ctx context.Context, UID string) ([]*web.Activity, error) {
 	//open db trx
 	conn, err := a.db.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
@@ -28,14 +28,15 @@ func (a *activityServiceImpl) GetActivityTypeById(ctx context.Context, categoryI
 		return nil, err
 	}
 
-	activityCategory, err := a.activityRepo.FindActivityTypeById(ctx, beginTx, categoryId)
+	uid, err := a.activityRepo.FindCompleteActivityByUID(ctx, beginTx, UID)
 	if err != nil {
 		return nil, err
 	}
-	return activityCategory, nil
+
+	return uid, nil
 }
 
-func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.Activity) (*web.ActivityResponse, error) {
+func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.Activity) (*web.NewActivityResponse, error) {
 	//open db trx
 	conn, err := a.db.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
@@ -51,14 +52,14 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 	activity.Period = activity.ActivityDate.Format("2006-01")
 
 	//get detail category
-	category, err := a.activityRepo.FindActivityTypeById(ctx, beginTx, activity.CategoryId)
+	category, err := a.activityRepo.FindActivityCategoryById(ctx, beginTx, activity.CategoryId)
 	if err != nil {
 		return nil, err
 	}
 
 	//check current balance wallet from is greater than nominal activity
 	walletFrom, err := a.walletRepository.FindById(ctx, beginTx, activity.UserId, activity.WalletIdFrom)
-	if walletFrom.Amount < activity.Nominal && category.Multiplier == -1 {
+	if walletFrom.Amount < activity.Nominal && category.Type == "EXP" {
 		return nil, errors.New("balance not enough")
 	}
 
@@ -67,43 +68,45 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 	if err != nil {
 		return nil, err
 	} else {
-		if category.Multiplier == 1 || category.Multiplier == -1 { //income = 1 ; expense = -1
-			updateAmount, err := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdFrom, activity.UserId, activity.Nominal, category.Multiplier)
+		if category.Type == "EXP" || category.Type == "INC" { //income = 1 ; expense = -1
+			updateAmount, err := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdFrom, activity.UserId, activity.Nominal, category.Type)
 			if err != nil {
 				return nil, err
 			}
 
-			return &web.ActivityResponse{
+			return &web.NewActivityResponse{
 				ActivityId:         activitySave.ActivityId,
 				Type:               category.Type, //category.CategoryName,
-				Category:           category.SubCategory[0].CategoryName,
+				Category:           category.SubCategoryName,
 				WalletIdFrom:       activitySave.WalletIdFrom,
 				WalletIdTo:         activitySave.WalletIdTo,
 				ActivityDate:       activitySave.ActivityDate,
-				Nominal:            activity.Nominal,
+				Nominal:            activitySave.Nominal,
 				AmountWalletIdFrom: updateAmount,
+				Desc:               activitySave.Desc,
 			}, nil
 		} else {
 			//transfer own wallet
-			updateAmountFrom, err := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdFrom, activity.UserId, activity.Nominal, category.Multiplier)
+			updateAmountFrom, err := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdFrom, activity.UserId, activity.Nominal, category.Type)
 			if err != nil {
 				return nil, err
 			}
-			updateAmountTo, err2 := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdTo, activity.UserId, activity.Nominal, category.Multiplier)
+			updateAmountTo, err2 := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdTo, activity.UserId, activity.Nominal, category.Type)
 			if err2 != nil {
 				return nil, err2
 			}
 
-			return &web.ActivityResponse{
+			return &web.NewActivityResponse{
 				ActivityId:         activitySave.ActivityId,
 				Type:               category.CategoryName,
-				Category:           category.SubCategory[0].CategoryName,
+				Category:           category.SubCategoryName,
 				WalletIdFrom:       activitySave.WalletIdFrom,
 				WalletIdTo:         activitySave.WalletIdTo,
 				ActivityDate:       activitySave.ActivityDate,
-				Nominal:            activity.Nominal,
+				Nominal:            activitySave.Nominal,
 				AmountWalletIdFrom: updateAmountFrom,
 				AmountWalletIdTo:   updateAmountTo,
+				Desc:               activitySave.Desc,
 			}, nil
 		}
 	}
@@ -112,7 +115,7 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 	//return nil, err
 }
 
-func (a *activityServiceImpl) GetActivityType(ctx context.Context) (*web.ResponseActivityType, error) {
+func (a *activityServiceImpl) GetActivityCategory(ctx context.Context) (*web.ResponseActivityType, error) {
 	//begin db trx
 	conn, err := a.db.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
@@ -124,46 +127,23 @@ func (a *activityServiceImpl) GetActivityType(ctx context.Context) (*web.Respons
 		return nil, err
 	}
 
-	activityTypes, err := a.activityRepo.FindActivityTypes(ctx, beginTx)
+	categories, err := a.activityRepo.FindActivityCategory(ctx, beginTx)
 	if err != nil {
 		return nil, err
 	}
 
-	var income []model.ActivityCategory = nil
+	var income []*model.ActivityCategory = nil
+	var expense []*model.ActivityCategory = nil
+	var transfer []*model.ActivityCategory = nil
 
-	for k, v := range activityTypes["Income"]["Income"] {
-		income = append(income, model.ActivityCategory{
-			CategoryCode: k,
-			CategoryName: v,
-		})
-	}
-
-	var expense []model.ActivityCategory = nil
-	var subCategory []model.ActivityCategory
-	for k, v := range activityTypes["Expense"] {
-		subCategory = nil
-		for u, s := range v {
-			subCategory = append(subCategory, model.ActivityCategory{
-				CategoryCode: u,
-				CategoryName: s,
-			})
+	for _, category := range categories {
+		if category.Type == "INC" {
+			income = append(income, category)
+		} else if category.Type == "EXP" {
+			expense = append(expense, category)
+		} else {
+			transfer = append(transfer, category)
 		}
-
-		expense = append(expense, model.ActivityCategory{
-			CategoryName: k,
-			SubCategory:  subCategory,
-		})
-	}
-
-	//fmt.Println(income)
-	//fmt.Println(expense)
-
-	var transfer []model.ActivityCategory = nil
-	for k, v := range activityTypes["Transfer"]["Transfer"] {
-		transfer = append(transfer, model.ActivityCategory{
-			CategoryCode: k,
-			CategoryName: v,
-		})
 	}
 
 	return &web.ResponseActivityType{
@@ -174,6 +154,25 @@ func (a *activityServiceImpl) GetActivityType(ctx context.Context) (*web.Respons
 		Transfer: transfer,
 	}, nil
 
+}
+
+func (a *activityServiceImpl) GetActivityCategoryById(ctx context.Context, categoryId uint) (*model.ActivityCategory, error) {
+	//open db trx
+	conn, err := a.db.Conn(ctx)
+	beginTx, err := conn.BeginTx(ctx, nil)
+	defer func() {
+		helper.CommitOrRollback(err, beginTx)
+		helper.ConnClose(conn)
+	}()
+	if err != nil {
+		return nil, err
+	}
+
+	activityCategory, err := a.activityRepo.FindActivityCategoryById(ctx, beginTx, categoryId)
+	if err != nil {
+		return nil, err
+	}
+	return activityCategory, nil
 }
 
 func NewActivityService(activityRepo repository.ActivityRepository, walletRepository repository.WalletRepository, db *sql.DB) ActivityService {

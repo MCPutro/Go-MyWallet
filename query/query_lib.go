@@ -37,11 +37,12 @@ const (
 	GetWalletById = "select w.user_id, w.wallet_id, w.wallet_name, wt.wallet_name, w.amount from public.wallets w join public.wallet_type wt on wt.wallet_code = w.type " +
 		"where w.is_active = 'Y' and %s order by w.wallet_id ASC ;" //w.user_id = $1
 
-	GetActivityTypes = "select data.type, data.activity_type_name, data.category, data.category_id as sub_category_code, data.sub_category_name, data.multiplier\n" +
-		"from (select ac.category_id, ac.type,a.activity_type_name, ac.category, ac.sub_category_name, a.multiplier, ac.is_active\n " +
-		"from public.activity_category ac\n " +
-		"inner join activity_type a on a.activity_type_code = ac.type\n " +
-		"order by ac.type, ac.category ASC) as data\n "
+	//GetActivityTypes = "select data.type, data.activity_type_name, data.category, data.category_id as sub_category_code, data.sub_category_name, data.multiplier\n" +
+	//	"from (select ac.category_id, ac.type,a.activity_type_name, ac.category, ac.sub_category_name, a.multiplier, ac.is_active\n " +
+	//	"from public.activity_category ac\n " +
+	//	"inner join activity_type a on a.activity_type_code = ac.type\n " +
+	//	"order by ac.type, ac.category ASC) as data\n "
+	GetActivityTypes = "select ac.category_id, ac.type, ac.category, ac.sub_category_name from public.activity_category ac %s"
 
 	GetActivityList = "SELECT t.activity_id, t.user_id, t.wallet_id_from, t.wallet_id_to, t.period, t.activity_date, a.activity_type_name, ac.sub_category_name " +
 		"FROM public.user_activity t " +

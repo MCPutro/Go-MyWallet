@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"github.com/MCPutro/Go-MyWallet/entity/model"
 	"github.com/MCPutro/Go-MyWallet/entity/web"
 	"github.com/MCPutro/Go-MyWallet/helper"
@@ -13,8 +12,14 @@ type activityControllerImpl struct {
 	activityService service.ActivityService
 }
 
+func (a *activityControllerImpl) GetAllActivity(c *fiber.Ctx) error {
+	list, err := a.activityService.GetActivityList(c.Context(), "7e65f8d1-bd30-4d2c-95bb-5bcbdb0e5561")
+
+	return helper.PrintResponse(err, list, c)
+}
+
 func (a *activityControllerImpl) GetActivityTypes(c *fiber.Ctx) error {
-	activityType, err := a.activityService.GetActivityType(c.Context())
+	activityType, err := a.activityService.GetActivityCategory(c.Context())
 
 	if err != nil {
 		return c.JSON(web.Response{
@@ -38,8 +43,6 @@ func (a *activityControllerImpl) AddActivity(c *fiber.Ctx) error {
 			Data:    nil,
 		})
 	}
-
-	fmt.Println(">>>", body)
 
 	activity, err := a.activityService.AddActivity(c.Context(), body)
 	return helper.PrintResponse(err, activity, c)
