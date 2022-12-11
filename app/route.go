@@ -2,11 +2,16 @@ package app
 
 import (
 	"github.com/MCPutro/Go-MyWallet/controller"
+	"github.com/MCPutro/Go-MyWallet/middleware"
 	"github.com/gofiber/fiber/v2"
 )
 
 func NewRouter(UserController controller.UserController, walletController controller.WalletController, activityController controller.ActivityController) *fiber.App {
 	app := fiber.New()
+
+	app.Get("/ping", middleware.CustomMiddleware(), func(ctx *fiber.Ctx) error {
+		return ctx.SendString("Pong")
+	})
 
 	userAPI := app.Group("/user")
 
@@ -23,10 +28,12 @@ func NewRouter(UserController controller.UserController, walletController contro
 	walletAPI.Get("/type", walletController.GetWalletType)
 	walletAPI.Delete("/", walletController.DeleteWallet)
 
-	app.Get("/activityTypes", activityController.GetActivityTypes)
-	app.Post("/activity", activityController.AddActivity)
-	app.Get("/activity", activityController.GetAllActivity)
-	app.Delete("/activity", activityController.DeleteActivity)
+	activityGroup := app.Group("/activity", middleware.CustomMiddleware())
+
+	activityGroup.Get("/category", activityController.GetActivityTypes)
+	activityGroup.Post("/", activityController.AddActivity)
+	activityGroup.Get("/", activityController.GetAllActivity)
+	activityGroup.Delete("/", activityController.DeleteActivity)
 
 	return app
 }

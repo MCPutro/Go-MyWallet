@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/MCPutro/Go-MyWallet/entity/model"
 	"github.com/MCPutro/Go-MyWallet/entity/web"
 	"github.com/MCPutro/Go-MyWallet/helper"
@@ -118,10 +119,22 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 		return nil, errors.New("gak boleh sama")
 	}
 
-	//check current balance wallet from is greater than nominal activity
+	//check current balance wallet from is greater than nominal activity and wallet id is existing or not
 	walletFrom, err := a.walletRepository.FindById(ctx, beginTx, activity.UserId, activity.WalletIdFrom)
-	if walletFrom.Amount < activity.Nominal && category.Type == "EXP" {
+	if err != nil {
+		return nil, err
+	} else if walletFrom == nil {
+		return nil, errors.New(fmt.Sprintf("Wallet id %d not found", activity.WalletIdFrom))
+	} else if walletFrom.Amount < activity.Nominal && category.Type == "EXP" {
 		return nil, errors.New("balance not enough")
+	}
+
+	//check wallet id is existing or not
+	walletTo, err := a.walletRepository.FindById(ctx, beginTx, activity.UserId, activity.WalletIdFrom)
+	if err != nil {
+		return nil, err
+	} else if walletFrom == nil {
+		return nil, errors.New(fmt.Sprintf("Wallet id %d not found", activity.WalletIdFrom))
 	}
 
 	//save data activity
@@ -130,7 +143,7 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 		return nil, err
 	} else {
 		if category.Type == "EXP" || category.Type == "INC" { //income = 1 ; expense = -1
-			updateAmount, err := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdFrom, activity.UserId, activity.Nominal, category.Type)
+			updateAmount, err := a.walletRepository.AddAmount(ctx, beginTx, walletFrom.WalletId, activity.UserId, activity.Nominal, category.Type)
 			if err != nil {
 				return nil, err
 			}
@@ -139,7 +152,7 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 				ActivityId:         activitySave.ActivityId,
 				Type:               category.Type, //category.CategoryName,
 				Category:           category.SubCategoryName,
-				WalletIdFrom:       activitySave.WalletIdFrom,
+				WalletIdFrom:       walletFrom.WalletId,
 				WalletIdTo:         activitySave.WalletIdTo,
 				ActivityDate:       activitySave.ActivityDate,
 				Nominal:            activitySave.Nominal,
@@ -148,11 +161,11 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 			}, nil
 		} else {
 			//transfer own wallet
-			updateAmountFrom, err := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdFrom, activity.UserId, activity.Nominal, "EXP")
+			updateAmountFrom, err := a.walletRepository.AddAmount(ctx, beginTx, walletFrom.WalletId, activity.UserId, activity.Nominal, "EXP")
 			if err != nil {
 				return nil, err
 			}
-			updateAmountTo, err2 := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdTo, activity.UserId, activity.Nominal, "INC")
+			updateAmountTo, err2 := a.walletRepository.AddAmount(ctx, beginTx, walletTo.WalletId, activity.UserId, activity.Nominal, "INC")
 			if err2 != nil {
 				return nil, err2
 			}
@@ -161,8 +174,8 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 				ActivityId:         activitySave.ActivityId,
 				Type:               category.CategoryName,
 				Category:           category.SubCategoryName,
-				WalletIdFrom:       activitySave.WalletIdFrom,
-				WalletIdTo:         activitySave.WalletIdTo,
+				WalletIdFrom:       walletFrom.WalletId,
+				WalletIdTo:         walletTo.WalletId,
 				ActivityDate:       activitySave.ActivityDate,
 				Nominal:            activitySave.Nominal,
 				AmountWalletIdFrom: updateAmountFrom,
