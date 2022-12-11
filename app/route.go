@@ -26,6 +26,7 @@ func NewRouter(UserController controller.UserController, walletController contro
 	app.Get("/activityTypes", activityController.GetActivityTypes)
 	app.Post("/activity", activityController.AddActivity)
 	app.Get("/activity", activityController.GetAllActivity)
+	app.Delete("/activity", activityController.DeleteActivity)
 
 	return app
 }

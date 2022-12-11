@@ -16,6 +16,65 @@ type activityServiceImpl struct {
 	db               *sql.DB
 }
 
+func (a *activityServiceImpl) DeleteActivity(ctx context.Context, actId uint8, UID string) error {
+	//open db trx
+	conn, err := a.db.Conn(ctx)
+	beginTx, err := conn.BeginTx(ctx, nil)
+	defer func() {
+		helper.CommitOrRollback(err, beginTx)
+		helper.ConnClose(conn)
+	}()
+	if err != nil {
+		return err
+	}
+
+	//get activity
+	activity, err := a.activityRepo.FindById(ctx, beginTx, actId, UID)
+	if err != nil {
+		return err
+	}
+
+	//get detail category
+	category, err := a.activityRepo.FindActivityCategoryById(ctx, beginTx, activity.CategoryId)
+	if err != nil {
+		return err
+	}
+
+	//remove activity
+	err = a.activityRepo.DeleteById(ctx, beginTx, activity.ActivityId, activity.UserId)
+	if err != nil {
+		return err
+	}
+
+	//update amount wallet
+	if category.Type == "EXP" {
+		//update amount wallet
+		_, err = a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdFrom, activity.UserId, activity.Nominal, "INC")
+		if err != nil {
+			return err
+		}
+	} else if category.Type == "INC" {
+		_, err = a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdFrom, activity.UserId, activity.Nominal, "EXP")
+		if err != nil {
+			return err
+		}
+	} else {
+		//return amount to walletFrom
+		_, err = a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdFrom, activity.UserId, activity.Nominal, "INC")
+		if err != nil {
+			return err
+		}
+
+		//reduce the amount in walletTo
+		_, err = a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdTo, activity.UserId, activity.Nominal, "EXP")
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (a *activityServiceImpl) GetActivityList(ctx context.Context, UID string) ([]*web.Activity, error) {
 	//open db trx
 	conn, err := a.db.Conn(ctx)
@@ -55,6 +114,8 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 	category, err := a.activityRepo.FindActivityCategoryById(ctx, beginTx, activity.CategoryId)
 	if err != nil {
 		return nil, err
+	} else if category.Type == "TRF" && activity.WalletIdFrom == activity.WalletIdTo {
+		return nil, errors.New("gak boleh sama")
 	}
 
 	//check current balance wallet from is greater than nominal activity
@@ -87,11 +148,11 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 			}, nil
 		} else {
 			//transfer own wallet
-			updateAmountFrom, err := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdFrom, activity.UserId, activity.Nominal, category.Type)
+			updateAmountFrom, err := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdFrom, activity.UserId, activity.Nominal, "EXP")
 			if err != nil {
 				return nil, err
 			}
-			updateAmountTo, err2 := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdTo, activity.UserId, activity.Nominal, category.Type)
+			updateAmountTo, err2 := a.walletRepository.AddAmount(ctx, beginTx, activity.WalletIdTo, activity.UserId, activity.Nominal, "INC")
 			if err2 != nil {
 				return nil, err2
 			}

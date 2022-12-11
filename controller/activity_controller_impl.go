@@ -12,8 +12,34 @@ type activityControllerImpl struct {
 	activityService service.ActivityService
 }
 
+func (a *activityControllerImpl) DeleteActivity(c *fiber.Ctx) error {
+	//userid := c.Get("userid")
+	//param := c.Get("activityId")
+	//activityId, err := strconv.ParseUint(param, 10, 32)
+	//if err != nil {
+	//	return c.SendString(err.Error())
+	//}
+
+	var body model.Activity
+
+	//parse data
+	if err := c.BodyParser(&body); err != nil {
+		return c.JSON(web.Response{
+			Status:  "ERROR",
+			Message: err.Error(),
+			Data:    nil,
+		})
+	}
+
+	err := a.activityService.DeleteActivity(c.Context(), body.ActivityId, body.UserId)
+
+	return helper.PrintResponse(err, nil, c)
+}
+
 func (a *activityControllerImpl) GetAllActivity(c *fiber.Ctx) error {
-	list, err := a.activityService.GetActivityList(c.Context(), "7e65f8d1-bd30-4d2c-95bb-5bcbdb0e5561")
+	userid := c.Get("userId")
+
+	list, err := a.activityService.GetActivityList(c.Context(), userid) //"7e65f8d1-bd30-4d2c-95bb-5bcbdb0e5561")
 
 	return helper.PrintResponse(err, list, c)
 }
