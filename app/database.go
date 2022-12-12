@@ -3,39 +3,37 @@ package app
 import (
 	"database/sql"
 	"fmt"
-	"github.com/MCPutro/Go-MyWallet/helper"
-	"github.com/joho/godotenv"
+	"github.com/MCPutro/Go-MyWallet/keys"
 	_ "github.com/lib/pq"
 	"log"
-	"os"
 	"time"
 )
 
 //var ENV = ".env.gcp"
 
 func InitDatabase() (*sql.DB, error) {
-	//run in localhost
-	err := godotenv.Load(helper.Environment)
-
-	mustGetEnv := func(k string) string {
-		v := os.Getenv(k)
-		if v == "" {
-			log.Fatalf("Warning: %s environment variable not set.", k)
-		}
-		return v
-	}
-
-	var (
-		dbUser = mustGetEnv("DB_USER")     //postgres
-		dbPass = mustGetEnv("DB_PASSWORD") //welcome1
-		dbHost = mustGetEnv("DB_HOSTNAME") //localhost
-		dbName = mustGetEnv("DB_NAME")     //postgres
-		dbPort = mustGetEnv("DB_PORT")     //5432
-		dbSSL  = mustGetEnv("DB_SSL")      //disable or require
-	)
+	////run in localhost
+	//err := godotenv.Load(keys.Environment)
+	//
+	//mustGetEnv := func(k string) string {
+	//	v := os.Getenv(k)
+	//	if v == "" {
+	//		log.Fatalf("Warning: %s environment variable not set.", k)
+	//	}
+	//	return v
+	//}
+	//
+	//var (
+	//	dbUser = mustGetEnv("DB_USER")     //postgres
+	//	dbPass = mustGetEnv("DB_PASSWORD") //welcome1
+	//	dbHost = mustGetEnv("DB_HOSTNAME") //localhost
+	//	dbName = mustGetEnv("DB_NAME")     //postgres
+	//	dbPort = mustGetEnv("DB_PORT")     //5432
+	//	dbSSL  = mustGetEnv("DB_SSL")      //disable or require
+	//)
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s port=%s dbname=%s sslmode=%s TimeZone=Asia/Jakarta",
-		dbHost, dbUser, dbPass, dbPort, dbName, dbSSL)
+		keys.DbHost, keys.DbUser, keys.DbPass, keys.DbPort, keys.DbName, keys.DbSSL)
 
 	db, err := sql.Open("postgres", dsn)
 

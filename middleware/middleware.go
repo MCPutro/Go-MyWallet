@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"github.com/MCPutro/Go-MyWallet/entity/web"
 	"github.com/MCPutro/Go-MyWallet/helper"
 	"github.com/MCPutro/Go-MyWallet/service"
@@ -11,6 +12,10 @@ import (
 
 func CustomMiddleware(jwtService service.JwtService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+
+		for s, s2 := range c.GetReqHeaders() {
+			fmt.Println(s, "-", s2)
+		}
 
 		//check the request is use auth Bearer or not
 		auth := c.Get(fiber.HeaderAuthorization, "xxx")

@@ -4,10 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/MCPutro/Go-MyWallet/helper"
+	"github.com/MCPutro/Go-MyWallet/keys"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/joho/godotenv"
-	"log"
-	"os"
 	"time"
 )
 
@@ -29,20 +27,20 @@ type jwtServiceImpl struct {
 
 func NewJwtService(issuer string) JwtService {
 	//run in localhost
-	err := godotenv.Load(helper.Environment)
-	if err != nil {
-		return nil
-	}
+	//err := godotenv.Load(keys.Environment)
+	//if err != nil {
+	//	return nil
+	//}
+	//
+	//mustGetEnv := func(k string) string {
+	//	v := os.Getenv(k)
+	//	if v == "" {
+	//		log.Fatalf("Warning: %s environment variable not set.", k)
+	//	}
+	//	return v
+	//}
 
-	mustGetEnv := func(k string) string {
-		v := os.Getenv(k)
-		if v == "" {
-			log.Fatalf("Warning: %s environment variable not set.", k)
-		}
-		return v
-	}
-
-	return &jwtServiceImpl{secretKey: mustGetEnv("JWT_SECRET_KEY"), issuer: issuer}
+	return &jwtServiceImpl{secretKey: keys.JwtSecretKey, issuer: issuer}
 }
 
 func (j *jwtServiceImpl) GenerateToken(UserId string) string {

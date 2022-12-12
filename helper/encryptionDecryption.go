@@ -6,28 +6,27 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"github.com/joho/godotenv"
+	"github.com/MCPutro/Go-MyWallet/keys"
 	"io"
-	"log"
-	"os"
 )
 
-func getKey(k string) string {
-	//if run in localhost
-	err := godotenv.Load(Environment)
-	if err != nil {
-		return "nil"
-	}
-
-	v := os.Getenv(k)
-	if v == "" {
-		log.Fatalf("Warning: %s environment variable not set.", k)
-	}
-	return v
-}
+//func getKey(k string) string {
+//	//if run in localhost
+//	err := godotenv.Load(keys.Environment)
+//	if err != nil {
+//		return "nil"
+//	}
+//
+//	v := os.Getenv(k)
+//	if v == "" {
+//		log.Fatalf("Warning: %s environment variable not set.", k)
+//	}
+//	return v
+//}
 
 func Encryption(t string) string {
-	c, err := aes.NewCipher([]byte(getKey("ENCRYPTION_DECRYPTION_KEY")))
+	//c, err := aes.NewCipher([]byte(getKey("ENCRYPTION_DECRYPTION_KEY")))
+	c, err := aes.NewCipher([]byte(keys.EncryptionDecryptionKey))
 	if err != nil {
 		fmt.Println("1", err)
 		return ""
@@ -62,7 +61,8 @@ func Decryption(t string) string {
 		return ""
 	}
 
-	c, err := aes.NewCipher([]byte(getKey("ENCRYPTION_DECRYPTION_KEY")))
+	//c, err := aes.NewCipher([]byte(getKey("ENCRYPTION_DECRYPTION_KEY")))
+	c, err := aes.NewCipher([]byte(keys.EncryptionDecryptionKey))
 	if err != nil {
 		fmt.Println(err)
 		return ""
