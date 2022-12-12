@@ -20,7 +20,7 @@ func Test_encryptPass(t *testing.T) {
 }
 
 func TestJWT(t *testing.T) {
-	jwtService := service.NewJwtService("aaa", "bbb")
+	jwtService := service.NewJwtService("aaa")
 
 	token := jwtService.GenerateToken("12345")
 

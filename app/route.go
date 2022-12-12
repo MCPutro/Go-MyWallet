@@ -3,13 +3,16 @@ package app
 import (
 	"github.com/MCPutro/Go-MyWallet/controller"
 	"github.com/MCPutro/Go-MyWallet/middleware"
+	"github.com/MCPutro/Go-MyWallet/service"
 	"github.com/gofiber/fiber/v2"
 )
 
-func NewRouter(UserController controller.UserController, walletController controller.WalletController, activityController controller.ActivityController) *fiber.App {
+func NewRouter(UserController controller.UserController, walletController controller.WalletController, activityController controller.ActivityController, jwtService service.JwtService) *fiber.App {
 	app := fiber.New()
 
-	app.Get("/ping", middleware.CustomMiddleware(), func(ctx *fiber.Ctx) error {
+	customMiddleware := middleware.CustomMiddleware(jwtService)
+
+	app.Get("/ping", customMiddleware, func(ctx *fiber.Ctx) error {
 		return ctx.SendString("Pong")
 	})
 
@@ -19,7 +22,7 @@ func NewRouter(UserController controller.UserController, walletController contro
 	userAPI.Post("/signin", UserController.Login)
 	userAPI.Get("/all", UserController.ShowALl)
 
-	walletAPI := app.Group("/wallet")
+	walletAPI := app.Group("/wallet", customMiddleware)
 
 	walletAPI.Post("/", walletController.AddWallet)
 	//walletAPI.Post("/update", walletController.UpdateWallet)
@@ -28,7 +31,7 @@ func NewRouter(UserController controller.UserController, walletController contro
 	walletAPI.Get("/type", walletController.GetWalletType)
 	walletAPI.Delete("/", walletController.DeleteWallet)
 
-	activityGroup := app.Group("/activity", middleware.CustomMiddleware())
+	activityGroup := app.Group("/activity", customMiddleware)
 
 	activityGroup.Get("/category", activityController.GetActivityTypes)
 	activityGroup.Post("/", activityController.AddActivity)

@@ -3,7 +3,11 @@ package service
 import (
 	"errors"
 	"fmt"
+	"github.com/MCPutro/Go-MyWallet/helper"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/joho/godotenv"
+	"log"
+	"os"
 	"time"
 )
 
@@ -13,7 +17,8 @@ type JwtService interface {
 }
 
 type jwtCustomClaim struct {
-	UID string
+	Data string
+	UID  string
 	jwt.RegisteredClaims
 }
 
@@ -22,13 +27,28 @@ type jwtServiceImpl struct {
 	issuer    string
 }
 
-func NewJwtService(secretKey string, issuer string) JwtService {
-	return &jwtServiceImpl{secretKey: secretKey, issuer: issuer}
+func NewJwtService(issuer string) JwtService {
+	//run in localhost
+	err := godotenv.Load(helper.Environment)
+	if err != nil {
+		return nil
+	}
+
+	mustGetEnv := func(k string) string {
+		v := os.Getenv(k)
+		if v == "" {
+			log.Fatalf("Warning: %s environment variable not set.", k)
+		}
+		return v
+	}
+
+	return &jwtServiceImpl{secretKey: mustGetEnv("JWT_SECRET_KEY"), issuer: issuer}
 }
 
 func (j *jwtServiceImpl) GenerateToken(UserId string) string {
 	claims := jwtCustomClaim{
-		UID: UserId,
+		Data: helper.Encryption(UserId),
+		UID:  UserId,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    j.issuer,
 			ExpiresAt: jwt.NewNumericDate(time.Now().AddDate(0, 0, 1)),

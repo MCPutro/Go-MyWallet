@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	jwtService := service.NewJwtService("goWallet", "emchepe")
+	jwtService := service.NewJwtService("Go-MyWallet")
 
 	validate := validator.New()
 	db, err := app.InitDatabase()
@@ -32,7 +32,9 @@ func main() {
 	activityService := service.NewActivityService(activityRepository, walletRepository, db)
 	activityController := controller.NewActivityController(activityService)
 
-	newRouter := app.NewRouter(userController, walletController, activityController)
+	//customMiddleware := middleware.CustomMiddleware(jwtService)
+
+	newRouter := app.NewRouter(userController, walletController, activityController, jwtService)
 
 	PORT := os.Getenv("PORT")
 	if PORT == "" {

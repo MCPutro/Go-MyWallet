@@ -1,18 +1,70 @@
 package middleware
 
 import (
+	"github.com/MCPutro/Go-MyWallet/entity/web"
+	"github.com/MCPutro/Go-MyWallet/helper"
+	"github.com/MCPutro/Go-MyWallet/service"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v4"
 	"strings"
 )
 
-func CustomMiddleware() fiber.Handler {
+func CustomMiddleware(jwtService service.JwtService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+
+		//check the request is use auth Bearer or not
 		auth := c.Get(fiber.HeaderAuthorization, "xxx")
 		if !strings.HasPrefix(auth, "Bearer ") {
-			return c.Status(fiber.StatusUnauthorized).SendString("auth nya salah bro")
+			return c.Status(fiber.StatusUnauthorized).JSON(web.Response{
+				Status:  "ERROR",
+				Message: "Invalid Authorization",
+				Data:    nil,
+			})
 		}
 
-		//fmt.Println(c.)
-		return c.Next()
+		//validation jwt
+		validateToken, err := jwtService.ValidateToken(strings.ReplaceAll(auth, "Bearer ", ""))
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(web.Response{
+				Status:  "ERROR",
+				Message: err.Error(),
+				Data:    nil,
+			})
+		}
+
+		//if token is valid
+		if validateToken.Valid {
+			claims := validateToken.Claims.(jwt.MapClaims)
+			Data := claims["Data"]
+			if Data == nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(web.Response{
+					Status:  "ERROR",
+					Message: "token salah",
+					Data:    nil,
+				})
+			}
+
+			//cek header userId is same with UID in jwt? need to encrypt UID in jwt
+			userId := c.Get("userId", "xxx")
+			if userId == helper.Decryption(Data.(string)) {
+				return c.Next()
+			}
+
+			return c.Status(fiber.StatusInternalServerError).JSON(web.Response{
+				Status:  "ERROR",
+				Message: "token salah",
+				Data:    nil,
+			})
+
+		} else {
+			return c.Status(fiber.StatusInternalServerError).JSON(web.Response{
+				Status:  "ERROR",
+				Message: "Token invalid",
+				Data:    nil,
+			})
+		}
+
+		//return c.Next()
+
 	}
 }

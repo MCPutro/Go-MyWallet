@@ -3,6 +3,7 @@ package app
 import (
 	"database/sql"
 	"fmt"
+	"github.com/MCPutro/Go-MyWallet/helper"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"log"
@@ -10,9 +11,11 @@ import (
 	"time"
 )
 
+//var ENV = ".env.gcp"
+
 func InitDatabase() (*sql.DB, error) {
 	//run in localhost
-	err := godotenv.Load(".env.gcp")
+	err := godotenv.Load(helper.Environment)
 
 	mustGetEnv := func(k string) string {
 		v := os.Getenv(k)
