@@ -62,7 +62,7 @@ func (u *userServiceImpl) Login(ctx context.Context, param string, password stri
 
 	//account is already exist
 	if findUserByUsernameOrEmail != nil {
-		err := bcrypt.CompareHashAndPassword([]byte(findUserByUsernameOrEmail.Authentication.Password), []byte(password))
+		err = bcrypt.CompareHashAndPassword([]byte(findUserByUsernameOrEmail.Authentication.Password), []byte(password))
 		if err == nil {
 			token := u.JwtService.GenerateToken(findUserByUsernameOrEmail.UserId)
 			findUserByUsernameOrEmail.Authentication.Token = token
