@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"github.com/MCPutro/Go-MyWallet/entity/web"
 	"github.com/MCPutro/Go-MyWallet/helper"
 	"github.com/MCPutro/Go-MyWallet/service"
@@ -12,10 +11,6 @@ import (
 
 func CustomMiddleware(jwtService service.JwtService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-
-		for s, s2 := range c.GetReqHeaders() {
-			fmt.Println(s, "-", s2)
-		}
 
 		//check the request is use auth Bearer or not
 		auth := c.Get(fiber.HeaderAuthorization, "xxx")
@@ -41,23 +36,26 @@ func CustomMiddleware(jwtService service.JwtService) fiber.Handler {
 		if validateToken.Valid {
 			claims := validateToken.Claims.(jwt.MapClaims)
 			Data := claims["Data"]
-			if Data == nil {
+			UID := claims["UID"]
+			if Data == nil && UID == nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(web.Response{
 					Status:  "ERROR",
-					Message: "token salah",
+					Message: "invalid tokens",
 					Data:    nil,
 				})
 			}
 
 			//cek header userId is same with UID in jwt? need to encrypt UID in jwt
 			userId := c.Get("userId", "xxx")
-			if userId == helper.Decryption(Data.(string)) {
+			if userId == helper.Decryption(Data.(string)) && userId == UID {
+				//c.Request().SetBodyRaw([]byte("{\"haha update di middleware\":1}"))
+				//c.Request().SetBody([]byte("{\"haha update di middleware\":2}"))
 				return c.Next()
 			}
 
 			return c.Status(fiber.StatusInternalServerError).JSON(web.Response{
 				Status:  "ERROR",
-				Message: "token salah",
+				Message: "invalid tokens",
 				Data:    nil,
 			})
 
