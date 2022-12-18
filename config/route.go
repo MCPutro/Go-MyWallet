@@ -12,7 +12,7 @@ func NewRouter(UserController controller.UserController, walletController contro
 
 	customMiddleware := middleware.CustomMiddleware(jwtService)
 
-	app.Get("/ping", customMiddleware, func(ctx *fiber.Ctx) error {
+	app.Get("/ping", func(ctx *fiber.Ctx) error {
 		return ctx.SendString("Pong")
 	})
 
