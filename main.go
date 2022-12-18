@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/MCPutro/Go-MyWallet/app"
+	"github.com/MCPutro/Go-MyWallet/config"
 	"github.com/MCPutro/Go-MyWallet/controller"
 	"github.com/MCPutro/Go-MyWallet/repository"
 	"github.com/MCPutro/Go-MyWallet/service"
@@ -14,7 +14,7 @@ func main() {
 	jwtService := service.NewJwtService("Go-MyWallet")
 
 	validate := validator.New()
-	db, err := app.InitDatabase()
+	db, err := config.InitDatabase()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -34,7 +34,7 @@ func main() {
 
 	//customMiddleware := middleware.CustomMiddleware(jwtService)
 
-	newRouter := app.NewRouter(userController, walletController, activityController, jwtService)
+	newRouter := config.NewRouter(userController, walletController, activityController, jwtService)
 
 	PORT := os.Getenv("PORT")
 	if PORT == "" {
@@ -54,7 +54,7 @@ func main() {
 //
 //	ctx := context.Background()
 //
-//	firebase, err := app.InitFirebase(ctx)
+//	firebase, err := config.InitFirebase(ctx)
 //	if err != nil {
 //		return
 //	}

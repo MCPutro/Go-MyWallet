@@ -3,7 +3,7 @@ package test
 import (
 	"context"
 	"fmt"
-	"github.com/MCPutro/Go-MyWallet/app"
+	"github.com/MCPutro/Go-MyWallet/config"
 	"github.com/MCPutro/Go-MyWallet/entity/model"
 	"github.com/MCPutro/Go-MyWallet/repository"
 	"github.com/MCPutro/Go-MyWallet/service"
@@ -12,7 +12,7 @@ import (
 
 func TestGetActType(t *testing.T) {
 
-	db, err := app.InitDatabase()
+	db, err := config.InitDatabase()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -35,7 +35,7 @@ func TestGetActType(t *testing.T) {
 }
 
 func TestKedua(t *testing.T) {
-	db, err := app.InitDatabase()
+	db, err := config.InitDatabase()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -49,7 +49,7 @@ func TestKedua(t *testing.T) {
 }
 
 func TestGetActCategoryByIdService(t *testing.T) {
-	db, err := app.InitDatabase()
+	db, err := config.InitDatabase()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -87,7 +87,7 @@ func BenchmarkAppendPointer(b *testing.B) {
 func TestGetActCategoryByIdRepository(t *testing.T) {
 	ctx := context.Background()
 
-	db, err := app.InitDatabase()
+	db, err := config.InitDatabase()
 	if err != nil {
 		fmt.Println(err)
 		return

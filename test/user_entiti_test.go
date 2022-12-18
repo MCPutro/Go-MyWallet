@@ -3,7 +3,7 @@ package test
 import (
 	"context"
 	"fmt"
-	"github.com/MCPutro/Go-MyWallet/app"
+	"github.com/MCPutro/Go-MyWallet/config"
 	"github.com/MCPutro/Go-MyWallet/entity/model"
 	"github.com/MCPutro/Go-MyWallet/repository"
 	"github.com/go-playground/validator/v10"
@@ -100,7 +100,7 @@ func TestStructLagi(t *testing.T) {
 
 func TestFindAllUser(t *testing.T) {
 
-	db, err := app.InitDatabase()
+	db, err := config.InitDatabase()
 
 	if err != nil {
 		fmt.Println("error : ", err)
