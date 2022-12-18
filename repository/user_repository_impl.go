@@ -28,8 +28,8 @@ func (u *userRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, newUser model
 	newUser.Authentication.UserId = uid
 
 	//insert into table users
-	SQL1 := "INSERT INTO public.users (user_id, username, first_name, last_name) VALUES ($1, $2, $3, $4)"
-	_, err := tx.ExecContext(ctx, SQL1, newUser.UserId, newUser.Username, newUser.FirstName, newUser.LastName)
+	SQL1 := "INSERT INTO public.users (user_id, username, full_name) VALUES ($1, $2, $3)"
+	_, err := tx.ExecContext(ctx, SQL1, newUser.UserId, newUser.Username, newUser.FullName)
 	if err != nil {
 		//fmt.Println("[LOG] User_repository_impl - Save1 :", err)
 		log.Println("[LOG] User_repository_impl - Save1 :", err)
@@ -103,7 +103,7 @@ func (u *userRepositoryImpl) FindAll(ctx context.Context, tx *sql.Tx) (*[]model.
 	var userData string
 
 	for rows.Next() {
-		err := rows.Scan(&m.UserId, &m.Username, &m.FirstName, &m.LastName, &m.Status, &m.CreatedDate, &m.Authentication.Password, &m.Authentication.RefreshToken, &userData)
+		err := rows.Scan(&m.UserId, &m.Username, &m.FullName, &m.Status, &m.CreatedDate, &m.Authentication.Password, &m.Authentication.RefreshToken, &userData)
 		if err != nil {
 			fmt.Println("[LOG] User_repository_impl - FindAll - fetch row :", err)
 			return nil, err
@@ -153,7 +153,7 @@ func (u *userRepositoryImpl) FindByUsernameOrEmail(ctx context.Context, tx *sql.
 	if row.Next() {
 		user := model.Users{}
 		var userData string
-		err = row.Scan(&user.UserId, &user.Username, &user.FirstName, &user.LastName, &user.Status, &user.CreatedDate, &user.Authentication.Password, &user.Authentication.RefreshToken, &userData)
+		err = row.Scan(&user.UserId, &user.Username, &user.FullName, &user.Status, &user.CreatedDate, &user.Authentication.Password, &user.Authentication.RefreshToken, &userData)
 		if err != nil {
 			return nil, err
 		}

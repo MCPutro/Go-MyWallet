@@ -89,6 +89,7 @@ func (u *userServiceImpl) Registration(ctx context.Context, userRegistration *we
 		return nil, err2
 	}
 
+	//open connection
 	conn, err := u.DB.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
 	defer func() {
@@ -104,20 +105,19 @@ func (u *userServiceImpl) Registration(ctx context.Context, userRegistration *we
 	if err != nil {
 		return nil, err
 	} else {
-		fmt.Println(listAccount)
-
 		//cek username is already exists in db
 		var message []string
 		if listAccount[userRegistration.Username] == true {
 			message = append(message, "Username")
 		}
+
 		//cek email is already exists in db
 		if listAccount[userRegistration.Email] == true {
 			message = append(message, "Email")
 		}
+
 		//return message when username or email already use
 		if len(message) > 0 {
-			//fmt.Println(">>>message : ", strings.Join(message, " and "), "already use")
 			return nil, errors.New(strings.Join(message, " and ") + " already use")
 		}
 	}
@@ -126,8 +126,7 @@ func (u *userServiceImpl) Registration(ctx context.Context, userRegistration *we
 
 	newUser := model.Users{
 		Username:    userRegistration.Username,
-		FirstName:   userRegistration.FirstName,
-		LastName:    userRegistration.LastName,
+		FullName:    userRegistration.FullName,
 		CreatedDate: time.Now(),
 		Authentication: model.UserAuthentication{
 			Password: string(hashedPassword),
