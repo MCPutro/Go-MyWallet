@@ -31,10 +31,7 @@ func NewUserService(userRepo repository.UserRepository, DB *sql.DB, validate *va
 func (u *userServiceImpl) FindAll(ctx context.Context) (*[]model.Users, error) {
 	conn, err := u.DB.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
-	defer func() {
-		helper.CommitOrRollback(err, beginTx)
-		helper.ConnClose(conn)
-	}()
+	defer helper.Close(err, beginTx, conn)
 
 	findAll, err := u.UserRepo.FindAll(ctx, beginTx)
 	if err != nil {
@@ -46,10 +43,8 @@ func (u *userServiceImpl) FindAll(ctx context.Context) (*[]model.Users, error) {
 
 func (u *userServiceImpl) Login(ctx context.Context, param string, password string) (*model.Users, error) {
 	conn, err := u.DB.Conn(ctx)
-	defer helper.ConnClose(conn)
-
 	beginTx, err := conn.BeginTx(ctx, nil)
-	defer helper.CommitOrRollback(err, beginTx)
+	defer helper.Close(err, beginTx, conn)
 	if err != nil {
 		return nil, err
 	}
@@ -92,10 +87,7 @@ func (u *userServiceImpl) Registration(ctx context.Context, userRegistration *we
 	//open connection
 	conn, err := u.DB.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
-	defer func() {
-		helper.CommitOrRollback(err, beginTx)
-		helper.ConnClose(conn)
-	}()
+	defer helper.Close(err, beginTx, conn)
 	if err != nil {
 		return nil, err
 	}

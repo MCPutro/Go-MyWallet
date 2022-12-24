@@ -21,10 +21,7 @@ func (a *activityServiceImpl) DeleteActivity(ctx context.Context, actId uint8, U
 	//open db trx
 	conn, err := a.db.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
-	defer func() {
-		helper.CommitOrRollback(err, beginTx)
-		helper.ConnClose(conn)
-	}()
+	defer helper.Close(err, beginTx, conn)
 	if err != nil {
 		return err
 	}
@@ -80,10 +77,7 @@ func (a *activityServiceImpl) GetActivityList(ctx context.Context, UID string) (
 	//open db trx
 	conn, err := a.db.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
-	defer func() {
-		helper.CommitOrRollback(err, beginTx)
-		helper.ConnClose(conn)
-	}()
+	defer helper.Close(err, beginTx, conn)
 	if err != nil {
 		return nil, err
 	}
@@ -100,10 +94,7 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 	//open db trx
 	conn, err := a.db.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
-	defer func() {
-		helper.CommitOrRollback(err, beginTx)
-		helper.ConnClose(conn)
-	}()
+	defer helper.Close(err, beginTx, conn)
 	if err != nil {
 		return nil, err
 	}
@@ -193,10 +184,7 @@ func (a *activityServiceImpl) GetActivityCategory(ctx context.Context) (*web.Res
 	//begin db trx
 	conn, err := a.db.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
-	defer func() {
-		helper.CommitOrRollback(err, beginTx)
-		helper.ConnClose(conn)
-	}()
+	defer helper.Close(err, beginTx, conn)
 	if err != nil {
 		return nil, err
 	}
@@ -234,10 +222,7 @@ func (a *activityServiceImpl) GetActivityCategoryById(ctx context.Context, categ
 	//open db trx
 	conn, err := a.db.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
-	defer func() {
-		helper.CommitOrRollback(err, beginTx)
-		helper.ConnClose(conn)
-	}()
+	defer helper.Close(err, beginTx, conn)
 	if err != nil {
 		return nil, err
 	}

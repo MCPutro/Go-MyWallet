@@ -20,7 +20,7 @@ var (
 )
 
 func mustGetEnv(k string) string {
-	//run in localhost will load from variable(file) environment
+	/* if run in localhost will load from variable(file) environment */
 	//err := godotenv.Load(".env.gcp")
 	//if err != nil {
 	//	return ""
