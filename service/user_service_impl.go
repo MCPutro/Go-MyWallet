@@ -28,7 +28,7 @@ func NewUserService(userRepo repository.UserRepository, DB *sql.DB, validate *va
 	return &userServiceImpl{UserRepo: userRepo, DB: DB, Validate: validate, JwtService: jwtService}
 }
 
-func (u *userServiceImpl) FindAll(ctx context.Context) (*[]model.Users, error) {
+func (u *userServiceImpl) FindAll(ctx context.Context) ([]*model.Users, error) {
 	conn, err := u.DB.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
 	defer helper.Close(err, beginTx, conn)
@@ -57,20 +57,27 @@ func (u *userServiceImpl) Login(ctx context.Context, param string, password stri
 
 	//account is already exist
 	if findUserByUsernameOrEmail != nil {
-		err = bcrypt.CompareHashAndPassword([]byte(findUserByUsernameOrEmail.Authentication.Password), []byte(password))
-		if err == nil {
-			token := u.JwtService.GenerateToken(findUserByUsernameOrEmail.UserId)
-			findUserByUsernameOrEmail.Authentication.Token = token
-			findUserByUsernameOrEmail.Authentication.RefreshToken = strings.ReplaceAll(uuid.New().String(), "-", "") + ";" + base64.StdEncoding.EncodeToString([]byte(findUserByUsernameOrEmail.UserId))
+		if findUserByUsernameOrEmail.Status == "ACT" {
+			err = bcrypt.CompareHashAndPassword([]byte(findUserByUsernameOrEmail.Authentication.Password), []byte(password))
+			if err == nil {
+				findUserByUsernameOrEmail.Authentication.Token = u.JwtService.GenerateToken(findUserByUsernameOrEmail.UserId, findUserByUsernameOrEmail.AccountId)
+				findUserByUsernameOrEmail.Authentication.RefreshToken = u.GenerateRefreshToken(findUserByUsernameOrEmail.UserId, findUserByUsernameOrEmail.AccountId)
+				/*hide pass from resp*/
+				findUserByUsernameOrEmail.Authentication.Password = ""
+			} else {
+				//return nil, errors.New("Your account and password not match. Please try again")
+				return nil, errors.New("your account and password not match. please try again")
+			}
 		} else {
-			return nil, errors.New("Your account and password not match. Please try again")
+			return nil, errors.New("your account is inactive")
 		}
 	}
 
+	findUserByUsernameOrEmail.UserId += "-" + findUserByUsernameOrEmail.AccountId
 	return findUserByUsernameOrEmail, nil
 }
 
-func (u *userServiceImpl) Registration(ctx context.Context, userRegistration *web.UserRegistration) (*web.UserRegistrationResp, error) {
+func (u *userServiceImpl) Registration(ctx context.Context, userRegistration *web.UserRegistration) (*model.Users, error) {
 
 	//validate data struct from ui
 	if err2 := u.Validate.Struct(userRegistration); err2 != nil {
@@ -93,7 +100,7 @@ func (u *userServiceImpl) Registration(ctx context.Context, userRegistration *we
 	}
 
 	//validation data is exists or not
-	listAccount, err := u.UserRepo.GetListAccount(ctx, beginTx)
+	listAccount, err := u.UserRepo.GetListUsernameAndEmail(ctx, beginTx)
 	if err != nil {
 		return nil, err
 	} else {
@@ -139,13 +146,20 @@ func (u *userServiceImpl) Registration(ctx context.Context, userRegistration *we
 	//save new user
 	userSaved, err := u.UserRepo.Save(ctx, beginTx, newUser)
 	if err == nil {
-		return &web.UserRegistrationResp{
-			UID:      userSaved.UserId,
-			Username: userSaved.Username,
-			Password: userSaved.Authentication.Password,
-		}, nil
+		//generate Token
+		userSaved.Authentication.Token = u.JwtService.GenerateToken(userSaved.UserId, "zzz")
+		userSaved.Authentication.RefreshToken = u.GenerateRefreshToken(userSaved.UserId, "zzz")
+		//hide password
+		userSaved.Authentication.Password = ""
+
+		userSaved.UserId += "-zzz"
+		return userSaved, nil
 	} else {
 		return nil, err
 	}
 
+}
+
+func (u *userServiceImpl) GenerateRefreshToken(uid, accountId string) string {
+	return strings.ReplaceAll(uuid.New().String(), "-", "") + ";" + base64.StdEncoding.EncodeToString([]byte(uid))
 }

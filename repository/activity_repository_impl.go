@@ -3,11 +3,8 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"errors"
-	"fmt"
 	"github.com/MCPutro/Go-MyWallet/entity/model"
 	"github.com/MCPutro/Go-MyWallet/entity/web"
-	"github.com/MCPutro/Go-MyWallet/query"
 	"log"
 )
 
@@ -30,13 +27,13 @@ func (a *activityRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, actId
 		var activity model.Activity
 		err = rows.Scan(&activity.ActivityId, &activity.UserId, &activity.CategoryId, &activity.WalletIdFrom, &activity.WalletIdTo, &activity.Period, &activity.ActivityDate, &activity.Nominal, &activity.Desc)
 		if err != nil {
-			log.Println("[ERROR] activity repo impl - FindById")
+			log.Println("[ERROR] activity repo impl - FindById", err)
 			return nil, err
 		}
 		return &activity, nil
 	}
 
-	return nil, errors.New("no data")
+	return nil, nil
 }
 
 func (a *activityRepositoryImpl) DeleteById(ctx context.Context, tx *sql.Tx, actId uint8, userId string) error {
@@ -54,7 +51,7 @@ func (a *activityRepositoryImpl) DeleteById(ctx context.Context, tx *sql.Tx, act
 	return nil
 }
 
-func (a *activityRepositoryImpl) FindCompleteActivityByUID(ctx context.Context, tx *sql.Tx, userId string) ([]*web.Activity, error) {
+func (a *activityRepositoryImpl) FindDetailActivityByUID(ctx context.Context, tx *sql.Tx, userId string) ([]*web.Activity, error) {
 
 	querySQL := `select ac.activity_id, a.type, a.sub_category_name as category, ac.wallet_id_from, w.wallet_name, ac.wallet_id_to, w2.wallet_name, ac.activity_date, ac.amount, ac."desc" as description
 					from public.user_activity ac
@@ -86,80 +83,6 @@ func (a *activityRepositoryImpl) FindCompleteActivityByUID(ctx context.Context, 
 	return list, nil
 }
 
-//func (a *activityRepositoryImpl) FindByUserIdxxx(ctx context.Context, tx *sql.Tx, userId string) (*[]model.Activity, error) {
-//
-//	querySQL := fmt.Sprintf(query.GetActivityList, "t.user_id = $1")
-//
-//	rows, err := tx.QueryContext(ctx, querySQL, userId)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	var resp []model.Activity = nil
-//	var item model.Activity
-//
-//	for rows.Next() {
-//		err = rows.Scan(&item.ActivityId, &item.UserId, &item.WalletIdFrom, &item.WalletIdTo, &item.Period, &item.ActivityDate)
-//		if err != nil {
-//			return nil, err
-//		}
-//	}
-//
-//	return &resp, nil
-//}
-
-func (a *activityRepositoryImpl) FindActivityCategory(ctx context.Context, tx *sql.Tx) ([]*model.ActivityCategory, error) {
-
-	SQL := fmt.Sprintf(query.GetActivityTypes, " where ac.is_active = 'Y' ;")
-
-	rows, err := tx.QueryContext(ctx, SQL)
-	defer rows.Close()
-	if err != nil {
-		return nil, err
-	}
-
-	var categoryList []*model.ActivityCategory
-
-	for rows.Next() {
-		var category model.ActivityCategory
-		err = rows.Scan(&category.CategoryId, &category.Type, &category.CategoryName, &category.SubCategoryName)
-		if err != nil {
-			return nil, err
-		}
-
-		categoryList = append(categoryList, &category)
-	}
-
-	if len(categoryList) > 0 {
-		return categoryList, nil
-	} else {
-		return nil, errors.New("no data")
-	}
-}
-
-func (a *activityRepositoryImpl) FindActivityCategoryById(ctx context.Context, tx *sql.Tx, categoryId uint) (*model.ActivityCategory, error) {
-
-	SQL := fmt.Sprintf(query.GetActivityTypes, " where ac.is_active = 'Y' and ac.category_id = $1 ;")
-
-	rows, err := tx.QueryContext(ctx, SQL, categoryId)
-	defer rows.Close()
-	if err != nil {
-		return nil, err
-	}
-
-	if rows.Next() {
-		var category model.ActivityCategory
-		err = rows.Scan(&category.CategoryId, &category.Type, &category.CategoryName, &category.SubCategoryName)
-		if err != nil {
-			return nil, err
-		}
-
-		return &category, nil
-	}
-
-	return nil, errors.New("no data")
-}
-
 func (a *activityRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, act *model.Activity) (*model.Activity, error) {
 
 	SQL := `INSERT INTO public.user_activity (user_id, category_id, wallet_id_from, wallet_id_to, period, activity_date, amount, "desc") 
@@ -172,8 +95,6 @@ func (a *activityRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, act *mode
 		return nil, err
 	}
 
-	//insertId, err := result.LastInsertId()
-	//fmt.Println(insertId, "<<<<")
 	act.ActivityId = insertId
 
 	return act, nil

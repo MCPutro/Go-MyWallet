@@ -4,6 +4,7 @@ import "time"
 
 type Users struct {
 	UserId         string
+	AccountId      string
 	Username       string
 	FullName       string
 	CreatedDate    time.Time

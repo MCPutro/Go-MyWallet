@@ -7,11 +7,6 @@ import (
 )
 
 type WalletRepository interface {
-	//firebase
-	//AddWallet(ctx context.Context, database *db.Ref, newWallet *model.Wallet) (*model.Wallet, error)
-	//GetWalletByUserId(ctx context.Context, database *db.Ref, uid string) (*[]model.Wallet, error)
-
-	// postgreSQL
 	Save(ctx context.Context, tx *sql.Tx, newWallet *model.Wallet) (*model.Wallet, error)
 	Update(ctx context.Context, tx *sql.Tx, newWallet *model.Wallet) (*model.Wallet, error)
 	AddAmount(ctx context.Context, tx *sql.Tx, walletId uint32, uid string, amount uint32, category string) (uint32, error)

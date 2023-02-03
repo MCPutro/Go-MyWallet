@@ -6,13 +6,13 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"github.com/MCPutro/Go-MyWallet/keys"
+	"github.com/MCPutro/Go-MyWallet/app"
 	"io"
 )
 
 //func getKey(k string) string {
 //	//if run in localhost
-//	err := godotenv.Load(keys.Environment)
+//	err := godotenv.Load(env.Environment)
 //	if err != nil {
 //		return "nil"
 //	}
@@ -26,7 +26,7 @@ import (
 
 func Encryption(t string) string {
 	//c, err := aes.NewCipher([]byte(getKey("ENCRYPTION_DECRYPTION_KEY")))
-	c, err := aes.NewCipher([]byte(keys.EncryptionDecryptionKey))
+	c, err := aes.NewCipher([]byte(app.EncryptionDecryptionKey))
 	if err != nil {
 		fmt.Println("1", err)
 		return ""
@@ -62,7 +62,7 @@ func Decryption(t string) string {
 	}
 
 	//c, err := aes.NewCipher([]byte(getKey("ENCRYPTION_DECRYPTION_KEY")))
-	c, err := aes.NewCipher([]byte(keys.EncryptionDecryptionKey))
+	c, err := aes.NewCipher([]byte(app.EncryptionDecryptionKey))
 	if err != nil {
 		fmt.Println(err)
 		return ""

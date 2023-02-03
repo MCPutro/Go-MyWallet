@@ -2,19 +2,19 @@ package main
 
 import (
 	"fmt"
-	"github.com/MCPutro/Go-MyWallet/config"
+	"github.com/MCPutro/Go-MyWallet/app"
+	"github.com/MCPutro/Go-MyWallet/app/router"
 	"github.com/MCPutro/Go-MyWallet/controller"
 	"github.com/MCPutro/Go-MyWallet/repository"
 	"github.com/MCPutro/Go-MyWallet/service"
 	"github.com/go-playground/validator/v10"
-	"os"
 )
 
 func main() {
 	jwtService := service.NewJwtService("Go-MyWallet")
 
 	validate := validator.New()
-	db, err := config.InitDatabase()
+	db, err := app.InitDatabase()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -29,14 +29,15 @@ func main() {
 	walletController := controller.NewWalletController(walletService)
 
 	activityRepository := repository.NewActivityRepository()
-	activityService := service.NewActivityService(activityRepository, walletRepository, db)
+	activityCategoryRepository := repository.NewActivityCategoryRepositoryImpl()
+	activityService := service.NewActivityService(activityRepository, activityCategoryRepository, walletRepository, db)
 	activityController := controller.NewActivityController(activityService)
 
 	//customMiddleware := middleware.CustomMiddleware(jwtService)
 
-	newRouter := config.NewRouter(userController, walletController, activityController, jwtService)
+	newRouter := router.NewRouter(userController, walletController, activityController, jwtService)
 
-	PORT := os.Getenv("PORT")
+	PORT := app.AppPort
 	if PORT == "" {
 		PORT = "9999"
 	}
@@ -47,35 +48,3 @@ func main() {
 	}
 
 }
-
-//func main1() {
-//	validate := validator.New()
-//	walletRepository := repository.NewWalletRepository()
-//
-//	ctx := context.Background()
-//
-//	firebase, err := config.InitFirebase(ctx)
-//	if err != nil {
-//		return
-//	}
-//	initDb, err := firebase.Database(ctx)
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//	database := initDb.NewRef("blogs")
-//
-//	walletService := service.NewWalletService(validate, database, walletRepository)
-//
-//	wallet := model.Wallet{
-//		UserId:   "123456789",
-//		WalletId: 2,
-//		Name:     "BNI",
-//		Type:     "BANK",
-//		IsActive: "Y",
-//	}
-//
-//	addWallet, err := walletService.AddWallet(ctx, &wallet)
-//	fmt.Println(err)
-//	fmt.Println(addWallet)
-//
-//}

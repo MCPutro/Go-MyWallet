@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"github.com/MCPutro/Go-MyWallet/entity/model"
 	"github.com/MCPutro/Go-MyWallet/query"
@@ -13,10 +12,11 @@ type walletRepositoryImpl struct{}
 
 func (w *walletRepositoryImpl) AddAmount(ctx context.Context, tx *sql.Tx, walletId uint32, uid string, amount uint32, category string) (uint32, error) {
 	var queryUpdate string
+	sql := "UPDATE public.wallets SET amount = (amount %s $2) WHERE wallet_id = $1 and user_id = $3 returning amount;"
 	if category == "EXP" {
-		queryUpdate = fmt.Sprintf("UPDATE public.wallets SET amount = (amount %s $2) WHERE wallet_id = $1 and user_id = $3 returning amount;", "-")
+		queryUpdate = fmt.Sprintf(sql, "-")
 	} else {
-		queryUpdate = fmt.Sprintf("UPDATE public.wallets SET amount = (amount %s $2) WHERE wallet_id = $1 and user_id = $3 returning amount;", "+")
+		queryUpdate = fmt.Sprintf(sql, "+")
 	}
 
 	//_, err := tx.ExecContext(ctx, queryUpdate, walletId, amount, uid)
@@ -30,10 +30,8 @@ func (w *walletRepositoryImpl) AddAmount(ctx context.Context, tx *sql.Tx, wallet
 }
 
 func (w *walletRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, newWallet *model.Wallet) (*model.Wallet, error) {
-	//queryInsert := "INSERT INTO public.wallets (user_id, wallet_name, type) VALUES ($1, $2, $3);"
 	queryInsert := "INSERT INTO public.wallets (user_id, wallet_name, type, amount) VALUES ($1, $2, $3, $4) RETURNING wallet_id;"
 
-	//result, err := tx.ExecContext(ctx, queryInsert, newWallet.UserId, newWallet.Name, newWallet.Type)
 	var insertId uint32
 	err := tx.QueryRowContext(ctx, queryInsert, newWallet.UserId, newWallet.Name, newWallet.Type, newWallet.Amount).Scan(&insertId)
 	if err != nil {
@@ -76,7 +74,7 @@ func (w *walletRepositoryImpl) FindByUserId(ctx context.Context, tx *sql.Tx, uid
 
 	for rows.Next() {
 		var tWallet model.Wallet
-		err := rows.Scan(&tWallet.UserId, &tWallet.WalletId, &tWallet.Name, &tWallet.Type, &tWallet.Amount)
+		err = rows.Scan(&tWallet.UserId, &tWallet.WalletId, &tWallet.Name, &tWallet.Type, &tWallet.Amount)
 		if err != nil {
 			fmt.Println("fetch data wallet :", err)
 			return nil, err
@@ -89,12 +87,11 @@ func (w *walletRepositoryImpl) FindByUserId(ctx context.Context, tx *sql.Tx, uid
 		return walletList, nil
 	}
 
-	return nil, errors.New("wallet list is empty")
+	return nil, nil
 }
 
 func (w *walletRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, userid string, walletId uint32) (*model.Wallet, error) {
 	querySQL := fmt.Sprintf(query.GetWalletById, "w.wallet_id = $1 and w.user_id = $2 ")
-	//fmt.Println(querySQL)
 
 	rows, err := tx.QueryContext(ctx, querySQL, walletId, userid)
 	defer rows.Close()
@@ -108,7 +105,7 @@ func (w *walletRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, userid 
 	if rows.Next() {
 		err = rows.Scan(&tWallet.UserId, &tWallet.WalletId, &tWallet.Name, &tWallet.Type, &tWallet.Amount)
 		if err != nil {
-			fmt.Println("fetch data wallet :", err)
+			//fmt.Println("fetch data wallet :", err)
 			return nil, err
 		}
 
@@ -132,7 +129,7 @@ func (w *walletRepositoryImpl) GetWalletType(ctx context.Context, tx *sql.Tx) (m
 	var itemCode, itemName string
 
 	for rows.Next() {
-		err := rows.Scan(&itemCode, &itemName)
+		err = rows.Scan(&itemCode, &itemName)
 		if err != nil {
 			return nil, err
 		}

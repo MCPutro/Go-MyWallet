@@ -12,9 +12,10 @@ import (
 )
 
 type activityServiceImpl struct {
-	activityRepo     repository.ActivityRepository
-	walletRepository repository.WalletRepository
-	db               *sql.DB
+	activityRepo         repository.ActivityRepository
+	activityCategoryRepo repository.ActivityCategoryRepository
+	walletRepository     repository.WalletRepository
+	db                   *sql.DB
 }
 
 func (a *activityServiceImpl) DeleteActivity(ctx context.Context, actId uint8, UID string) error {
@@ -33,7 +34,7 @@ func (a *activityServiceImpl) DeleteActivity(ctx context.Context, actId uint8, U
 	}
 
 	//get detail category
-	category, err := a.activityRepo.FindActivityCategoryById(ctx, beginTx, activity.CategoryId)
+	category, err := a.activityCategoryRepo.FindActivityCategoryById(ctx, beginTx, activity.CategoryId)
 	if err != nil {
 		return err
 	}
@@ -82,7 +83,7 @@ func (a *activityServiceImpl) GetActivityList(ctx context.Context, UID string) (
 		return nil, err
 	}
 
-	uid, err := a.activityRepo.FindCompleteActivityByUID(ctx, beginTx, UID)
+	uid, err := a.activityRepo.FindDetailActivityByUID(ctx, beginTx, UID)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +104,7 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 	activity.Period = activity.ActivityDate.Format("2006-01")
 
 	//get detail category
-	category, err := a.activityRepo.FindActivityCategoryById(ctx, beginTx, activity.CategoryId)
+	category, err := a.activityCategoryRepo.FindActivityCategoryById(ctx, beginTx, activity.CategoryId)
 	if err != nil {
 		return nil, err
 	} else if category.Type == "TRF" && activity.WalletIdFrom == activity.WalletIdTo {
@@ -189,7 +190,7 @@ func (a *activityServiceImpl) GetActivityCategory(ctx context.Context) (*web.Res
 		return nil, err
 	}
 
-	categories, err := a.activityRepo.FindActivityCategory(ctx, beginTx)
+	categories, err := a.activityCategoryRepo.FindActivityCategory(ctx, beginTx)
 	if err != nil {
 		return nil, err
 	}
@@ -227,13 +228,13 @@ func (a *activityServiceImpl) GetActivityCategoryById(ctx context.Context, categ
 		return nil, err
 	}
 
-	activityCategory, err := a.activityRepo.FindActivityCategoryById(ctx, beginTx, categoryId)
+	activityCategory, err := a.activityCategoryRepo.FindActivityCategoryById(ctx, beginTx, categoryId)
 	if err != nil {
 		return nil, err
 	}
 	return activityCategory, nil
 }
 
-func NewActivityService(activityRepo repository.ActivityRepository, walletRepository repository.WalletRepository, db *sql.DB) ActivityService {
-	return &activityServiceImpl{activityRepo: activityRepo, walletRepository: walletRepository, db: db}
+func NewActivityService(activityRepo repository.ActivityRepository, activityCategoryRepo repository.ActivityCategoryRepository, walletRepository repository.WalletRepository, db *sql.DB) ActivityService {
+	return &activityServiceImpl{activityRepo: activityRepo, activityCategoryRepo: activityCategoryRepo, walletRepository: walletRepository, db: db}
 }

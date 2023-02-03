@@ -32,7 +32,20 @@ func (u *userControllerImpl) Login(c *fiber.Ctx) error {
 	//call func login in user service
 	userLogin, err := u.UserService.Login(c.Context(), l.Account, l.Password)
 
-	return helper.PrintResponse(err, userLogin, c)
+	if err != nil {
+		return helper.PrintResponse(err, nil, c)
+	}
+
+	return helper.PrintResponse(err,
+		web.UserResp{
+			UserId:         userLogin.UserId,
+			Username:       userLogin.Username,
+			FullName:       userLogin.FullName,
+			Authentication: userLogin.Authentication,
+			Data:           userLogin.Data,
+		},
+		c,
+	)
 }
 
 func (u *userControllerImpl) Registration(c *fiber.Ctx) error {
@@ -46,6 +59,19 @@ func (u *userControllerImpl) Registration(c *fiber.Ctx) error {
 	//call func login in user service
 	userReg, err := u.UserService.Registration(c.Context(), p)
 
-	return helper.PrintResponse(err, userReg, c)
+	if err != nil {
+		return helper.PrintResponse(err, nil, c)
+	}
+
+	return helper.PrintResponse(err,
+		web.UserResp{
+			UserId:         userReg.UserId,
+			Username:       userReg.Username,
+			FullName:       userReg.FullName,
+			Authentication: userReg.Authentication,
+			Data:           userReg.Data,
+		},
+		c,
+	)
 
 }

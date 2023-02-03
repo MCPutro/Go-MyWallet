@@ -8,14 +8,14 @@ import (
 func PrintResponse(err error, data interface{}, c *fiber.Ctx) error {
 	if err != nil {
 		//c.Status(fiber.StatusUnauthorized)
-		return c.JSON(web.Response{
+		return c.Status(fiber.StatusInternalServerError).JSON(web.Response{
 			Status:  "ERROR",
 			Message: err.Error(),
 			Data:    nil,
 		})
 	} else {
-		c.Status(fiber.StatusOK)
-		return c.JSON(web.Response{
+		//c.Status(fiber.StatusOK)
+		return c.Status(fiber.StatusOK).JSON(web.Response{
 			Status:  "SUCCESS",
 			Message: nil,
 			Data:    data,

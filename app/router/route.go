@@ -1,4 +1,4 @@
-package config
+package router
 
 import (
 	"github.com/MCPutro/Go-MyWallet/controller"

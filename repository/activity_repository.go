@@ -10,9 +10,6 @@ import (
 type ActivityRepository interface {
 	FindById(ctx context.Context, tx *sql.Tx, actId uint8, userId string) (*model.Activity, error)
 	DeleteById(ctx context.Context, tx *sql.Tx, actId uint8, userId string) error
-	FindCompleteActivityByUID(ctx context.Context, tx *sql.Tx, userId string) ([]*web.Activity, error)
-	//FindByUserIdxxx(ctx context.Context, tx *sql.Tx, userId string) (*[]model.Activity, error)
-	FindActivityCategory(ctx context.Context, tx *sql.Tx) ([]*model.ActivityCategory, error)
-	FindActivityCategoryById(ctx context.Context, tx *sql.Tx, categoryId uint) (*model.ActivityCategory, error)
 	Save(ctx context.Context, tx *sql.Tx, activity *model.Activity) (*model.Activity, error)
+	FindDetailActivityByUID(ctx context.Context, tx *sql.Tx, userId string) ([]*web.Activity, error)
 }
