@@ -31,7 +31,12 @@ func NewUserService(userRepo repository.UserRepository, DB *sql.DB, validate *va
 func (u *userServiceImpl) FindAll(ctx context.Context) ([]*model.Users, error) {
 	conn, err := u.DB.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
-	defer helper.Close(err, beginTx, conn)
+	defer func() {
+		helper.Close(err, beginTx, conn)
+	}()
+	if err != nil {
+		return nil, err
+	}
 
 	findAll, err := u.UserRepo.FindAll(ctx, beginTx)
 	if err != nil {
@@ -44,7 +49,9 @@ func (u *userServiceImpl) FindAll(ctx context.Context) ([]*model.Users, error) {
 func (u *userServiceImpl) Login(ctx context.Context, param string, password string) (*model.Users, error) {
 	conn, err := u.DB.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
-	defer helper.Close(err, beginTx, conn)
+	defer func() {
+		helper.Close(err, beginTx, conn)
+	}()
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +101,9 @@ func (u *userServiceImpl) Registration(ctx context.Context, userRegistration *we
 	//open connection
 	conn, err := u.DB.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
-	defer helper.Close(err, beginTx, conn)
+	defer func() {
+		helper.Close(err, beginTx, conn)
+	}()
 	if err != nil {
 		return nil, err
 	}

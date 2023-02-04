@@ -35,9 +35,10 @@ func CustomMiddleware(jwtService service.JwtService) fiber.Handler {
 		//if token is valid
 		if validateToken.Valid {
 			claims := validateToken.Claims.(jwt.MapClaims)
-			Data := claims["Data"]
-			UID := claims["UID"]
-			if Data == nil && UID == nil {
+			ClaimData := claims["Data"]
+			ClaimUID := claims["UID"]
+			ClaimId := claims["Id"]
+			if ClaimData == nil && ClaimUID == nil && ClaimId == nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(web.Response{
 					Status:  "ERROR",
 					Message: "invalid tokens",
@@ -45,9 +46,11 @@ func CustomMiddleware(jwtService service.JwtService) fiber.Handler {
 				})
 			}
 
-			//cek header userId is same with UID in jwt? need to encrypt UID in jwt
-			userId := c.Get("userId", "xxx")
-			if userId == helper.Decryption(Data.(string)) && userId == UID {
+			//cek header headerUserId is same with UID in jwt? need to encrypt UID in jwt
+			headerUserId := c.Get("UserId", "xxx")
+			headerId := strings.Split(headerUserId, "-")
+			decryption := strings.ReplaceAll(helper.Decryption(ClaimData.(string)), "#", "-")
+			if decryption == headerUserId && decryption == ClaimUID.(string)+"-"+ClaimId.(string) && ClaimId.(string) == headerId[len(headerId)-1] {
 				//c.Request().SetBodyRaw([]byte("{\"haha update di middleware\":1}"))
 				//c.Request().SetBody([]byte("{\"haha update di middleware\":2}"))
 				return c.Next()

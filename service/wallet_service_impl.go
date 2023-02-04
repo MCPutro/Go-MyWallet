@@ -3,10 +3,12 @@ package service
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"github.com/MCPutro/Go-MyWallet/entity/model"
 	"github.com/MCPutro/Go-MyWallet/helper"
 	"github.com/MCPutro/Go-MyWallet/repository"
 	"github.com/go-playground/validator/v10"
+	"strings"
 )
 
 type walletServiceImpl struct {
@@ -16,15 +18,42 @@ type walletServiceImpl struct {
 }
 
 func (w *walletServiceImpl) UpdateWallet(ctx context.Context, wallet *model.Wallet) (*model.Wallet, error) {
-	//TODO implement me
-	panic("implement me")
+
+	/* validation data */
+	if err := w.validate.Struct(wallet); err != nil {
+		return nil, err
+	}
+
+	/* create db transaction */
+	conn, err := w.db.Conn(ctx)
+	beginTx, err := conn.BeginTx(ctx, nil)
+	defer func() {
+		helper.Close(err, beginTx, conn)
+	}()
+	if err != nil {
+		return nil, err
+	}
+
+	/* check wallet id is exists or not */
+	existing, err := w.walletRepo.FindById(ctx, beginTx, wallet.UserId, wallet.WalletId)
+	if err != nil {
+		return nil, err
+	}
+
+	if existing == nil {
+		return nil, errors.New("wallet not found")
+	}
+
+	return existing, nil
 }
 
 func (w *walletServiceImpl) GetWalletType(ctx context.Context) ([]*model.WalletType, error) {
 	/* create db transaction */
 	conn, err := w.db.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
-	defer helper.Close(err, beginTx, conn)
+	defer func() {
+		helper.Close(err, beginTx, conn)
+	}()
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +82,9 @@ func (w *walletServiceImpl) GetWalletByUserId(ctx context.Context, UID string) (
 	/* create db transaction */
 	conn, err := w.db.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
-	defer helper.Close(err, beginTx, conn)
+	defer func() {
+		helper.Close(err, beginTx, conn)
+	}()
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +102,9 @@ func (w *walletServiceImpl) GetWalletById(ctx context.Context, userid string, wa
 	/* create db transaction */
 	conn, err := w.db.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
-	defer helper.Close(err, beginTx, conn)
+	defer func() {
+		helper.Close(err, beginTx, conn)
+	}()
 	if err != nil {
 		return nil, err
 	}
@@ -88,31 +121,26 @@ func (w *walletServiceImpl) GetWalletById(ctx context.Context, userid string, wa
 func (w *walletServiceImpl) AddWallet(ctx context.Context, newWallet *model.Wallet) (*model.Wallet, error) {
 
 	/* validation data */
-	if err2 := w.validate.Struct(newWallet); err2 != nil {
-		return nil, err2
+	if err := w.validate.Struct(newWallet); err != nil {
+		return nil, err
 	}
 
 	/* create db transaction */
 	conn, err := w.db.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
-	defer helper.Close(err, beginTx, conn)
+	defer func() {
+		helper.Close(err, beginTx, conn)
+	}()
 	if err != nil {
 		return nil, err
 	}
 
-	/* check wallet id is exists or not */
-	existing, err := w.walletRepo.FindById(ctx, beginTx, newWallet.UserId, newWallet.WalletId)
-	if err != nil {
-		return nil, err
-	}
+	/*set user_id and account_id*/
+	split := strings.Split(newWallet.UserId, "-")
+	userId := strings.Join(split[:len(split)-1], "-")
+	newWallet.UserId = userId
 
-	/* wallet already exist, update data */
-	var wallet *model.Wallet
-	if existing != nil {
-		wallet, err = w.walletRepo.Update(ctx, beginTx, newWallet)
-	} else {
-		wallet, err = w.walletRepo.Save(ctx, beginTx, newWallet)
-	}
+	wallet, err := w.walletRepo.Save(ctx, beginTx, newWallet)
 
 	if err != nil {
 		return nil, err
@@ -125,11 +153,9 @@ func (w *walletServiceImpl) DeleteWallet(ctx context.Context, userid string, wal
 	//create db transaction
 	conn, err := w.db.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)
-	//defer func() {
-	//	helper.CommitOrRollback(err, beginTx)
-	//	helper.ConnClose(conn)
-	//}()
-	defer helper.Close(err, beginTx, conn)
+	defer func() {
+		helper.Close(err, beginTx, conn)
+	}()
 	if err != nil {
 		return err
 	}

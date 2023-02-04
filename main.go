@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/MCPutro/Go-MyWallet/app"
 	"github.com/MCPutro/Go-MyWallet/app/router"
@@ -19,6 +20,12 @@ func main() {
 		fmt.Println(err)
 		return
 	}
+	defer func(db *sql.DB) {
+		err = db.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}(db)
 
 	userRepository := repository.NewUserRepository()
 	userService := service.NewUserService(userRepository, db, validate, jwtService)
