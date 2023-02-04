@@ -28,7 +28,7 @@ var (
 
 func mustGetEnv(k string) string {
 	/* if run in localhost will load from variable(file) environment */
-	err := godotenv.Load(".env.gcp")
+	err := godotenv.Load(".env")
 	if err != nil {
 		return ""
 	}
