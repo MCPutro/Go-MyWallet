@@ -162,8 +162,6 @@ func (w *walletServiceImpl) DeleteWallet(ctx context.Context, userid string, wal
 
 	err = w.walletRepo.DeleteById(ctx, beginTx, userid, walletId)
 
-	helper.Close(err, nil, nil)
-
 	return err
 }
 
