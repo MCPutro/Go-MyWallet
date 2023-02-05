@@ -8,7 +8,6 @@ import (
 	"github.com/MCPutro/Go-MyWallet/helper"
 	"github.com/MCPutro/Go-MyWallet/repository"
 	"github.com/go-playground/validator/v10"
-	"strings"
 )
 
 type walletServiceImpl struct {
@@ -89,8 +88,11 @@ func (w *walletServiceImpl) GetWalletByUserId(ctx context.Context, UID string) (
 		return nil, err
 	}
 
+	/*get user id*/
+	id, _ := helper.GetUserIdAndAccountId(UID)
+
 	/* call repo func */
-	walletsByUserId, err := w.walletRepo.FindByUserId(ctx, beginTx, UID)
+	walletsByUserId, err := w.walletRepo.FindByUserId(ctx, beginTx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -109,8 +111,11 @@ func (w *walletServiceImpl) GetWalletById(ctx context.Context, userid string, wa
 		return nil, err
 	}
 
+	/*get user id*/
+	id, _ := helper.GetUserIdAndAccountId(userid)
+
 	/* call repo func */
-	wallet, err := w.walletRepo.FindById(ctx, beginTx, userid, walletId)
+	wallet, err := w.walletRepo.FindById(ctx, beginTx, id, walletId)
 	if err != nil {
 		return nil, err
 	}
@@ -136,9 +141,8 @@ func (w *walletServiceImpl) AddWallet(ctx context.Context, newWallet *model.Wall
 	}
 
 	/*set user_id and account_id*/
-	split := strings.Split(newWallet.UserId, "-")
-	userId := strings.Join(split[:len(split)-1], "-")
-	newWallet.UserId = userId
+	id, _ := helper.GetUserIdAndAccountId(newWallet.UserId)
+	newWallet.UserId = id
 
 	wallet, err := w.walletRepo.Save(ctx, beginTx, newWallet)
 
@@ -160,7 +164,10 @@ func (w *walletServiceImpl) DeleteWallet(ctx context.Context, userid string, wal
 		return err
 	}
 
-	err = w.walletRepo.DeleteById(ctx, beginTx, userid, walletId)
+	/*get user_id and account_id*/
+	id, _ := helper.GetUserIdAndAccountId(userid)
+
+	err = w.walletRepo.DeleteById(ctx, beginTx, id, walletId)
 
 	return err
 }

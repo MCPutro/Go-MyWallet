@@ -27,7 +27,7 @@ func NewRouter(UserController controller.UserController, walletController contro
 	walletAPI.Post("/", walletController.AddWallet)
 	//walletAPI.Post("/update", walletController.UpdateWallet)
 	walletAPI.Get("/uid", walletController.GetWalletByUID)
-	walletAPI.Get("/id", walletController.GetWalletId)
+	walletAPI.Get("/:WalletId", walletController.GetWalletId)
 	walletAPI.Get("/type", walletController.GetWalletType)
 	walletAPI.Delete("/", walletController.DeleteWallet)
 
