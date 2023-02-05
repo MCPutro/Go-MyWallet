@@ -3,7 +3,7 @@ package model
 import "time"
 
 type Activity struct {
-	ActivityId   uint8 //increment db
+	ActivityId   uint32 //increment db
 	UserId       string
 	WalletIdFrom uint32
 	WalletIdTo   uint32

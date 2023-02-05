@@ -11,7 +11,7 @@ import (
 type activityRepositoryImpl struct {
 }
 
-func (a *activityRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, actId uint8, userId string) (*model.Activity, error) {
+func (a *activityRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, actId uint32, userId string) (*model.Activity, error) {
 	querySQL := `select uc.activity_id, uc.user_id, uc.category_id, uc.wallet_id_from, uc.wallet_id_to, uc.period, uc.activity_date, uc.amount, uc."desc" as description
 					from public.user_activity uc
 					where uc.activity_id = $1 and uc.user_id = $2
@@ -36,7 +36,7 @@ func (a *activityRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, actId
 	return nil, nil
 }
 
-func (a *activityRepositoryImpl) DeleteById(ctx context.Context, tx *sql.Tx, actId uint8, userId string) error {
+func (a *activityRepositoryImpl) DeleteById(ctx context.Context, tx *sql.Tx, actId uint32, userId string) error {
 	querySQL := `DELETE
 					FROM public.user_activity
 					WHERE activity_id = $1
@@ -88,7 +88,7 @@ func (a *activityRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, act *mode
 	SQL := `INSERT INTO public.user_activity (user_id, category_id, wallet_id_from, wallet_id_to, period, activity_date, amount, "desc") 
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING activity_id`
 
-	var insertId uint8
+	var insertId uint32
 	//_, err := tx.ExecContext(ctx, SQL, act.UserId, act.CategoryId, act.WalletIdFrom, act.WalletIdTo, act.Period, act.ActivityDate, act.Nominal, act.Desc)
 	err := tx.QueryRowContext(ctx, SQL, act.UserId, act.CategoryId, act.WalletIdFrom, act.WalletIdTo, act.Period, act.ActivityDate, act.Nominal, act.Desc).Scan(&insertId)
 	if err != nil {

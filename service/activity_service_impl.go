@@ -18,7 +18,7 @@ type activityServiceImpl struct {
 	db                   *sql.DB
 }
 
-func (a *activityServiceImpl) DeleteActivity(ctx context.Context, actId uint8, UID string) error {
+func (a *activityServiceImpl) DeleteActivity(ctx context.Context, actId uint32, UID string) error {
 	//open db trx
 	conn, err := a.db.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)

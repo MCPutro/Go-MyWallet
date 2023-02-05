@@ -156,12 +156,12 @@ func (u *userServiceImpl) Registration(ctx context.Context, userRegistration *we
 	userSaved, err := u.UserRepo.Save(ctx, beginTx, newUser)
 	if err == nil {
 		//generate Token
-		userSaved.Authentication.Token = u.JwtService.GenerateToken(userSaved.UserId, "zzz")
-		userSaved.Authentication.RefreshToken = u.GenerateRefreshToken(userSaved.UserId, "zzz")
+		userSaved.Authentication.Token = u.JwtService.GenerateToken(userSaved.UserId, userSaved.AccountId)
+		userSaved.Authentication.RefreshToken = u.GenerateRefreshToken(userSaved.UserId, userSaved.AccountId)
 		//hide password
 		userSaved.Authentication.Password = ""
 
-		userSaved.UserId += "-zzz"
+		userSaved.UserId += "-" + userSaved.AccountId
 		return userSaved, nil
 	} else {
 		return nil, err

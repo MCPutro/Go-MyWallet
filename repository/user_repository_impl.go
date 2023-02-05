@@ -27,8 +27,10 @@ func (u *userRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, newUser model
 	newUser.Authentication.UserId = uid
 
 	//insert into table users
-	SQL1 := "INSERT INTO public.users (user_id, username, full_name) VALUES ($1, $2, $3)"
-	_, err := tx.ExecContext(ctx, SQL1, newUser.UserId, newUser.Username, newUser.FullName)
+	SQL1 := "INSERT INTO public.users (user_id, username, full_name) VALUES ($1, $2, $3) RETURNING account_id"
+	//_, err := tx.ExecContext(ctx, SQL1, newUser.UserId, newUser.Username, newUser.FullName)
+	var accountId string
+	err := tx.QueryRowContext(ctx, SQL1, newUser.UserId, newUser.Username, newUser.FullName).Scan(&accountId)
 	if err != nil {
 		log.Println("[LOG] User_repository_impl - Save1 :", err)
 		if err2, ok := err.(*pq.Error); ok {
@@ -56,11 +58,12 @@ func (u *userRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, newUser model
 		return nil, err
 	} else {
 		log.Println("[LOG] User_repository_impl - Save1 :", err)
+		newUser.AccountId = accountId
 	}
 
 	//insert into user_data
 	for key, value := range newUser.Data {
-		fmt.Println(key, " : ", value)
+		//fmt.Println(key, " : ", value)
 
 		SQL2 := "INSERT INTO public.user_data (user_id, data_key, data_value) VALUES ($1, $2, $3);"
 		_, err = tx.ExecContext(ctx, SQL2, newUser.UserId, key, value)

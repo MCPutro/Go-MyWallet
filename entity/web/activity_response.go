@@ -3,7 +3,7 @@ package web
 import "time"
 
 type NewActivityResponse struct {
-	ActivityId         uint8     `json:"ActivityId"`
+	ActivityId         uint32    `json:"ActivityId"`
 	Type               string    `json:"Type"`
 	Category           string    `json:"Category"`
 	WalletIdFrom       uint32    `json:"WalletIdFrom"`

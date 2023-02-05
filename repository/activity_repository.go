@@ -8,8 +8,8 @@ import (
 )
 
 type ActivityRepository interface {
-	FindById(ctx context.Context, tx *sql.Tx, actId uint8, userId string) (*model.Activity, error)
-	DeleteById(ctx context.Context, tx *sql.Tx, actId uint8, userId string) error
+	FindById(ctx context.Context, tx *sql.Tx, actId uint32, userId string) (*model.Activity, error)
+	DeleteById(ctx context.Context, tx *sql.Tx, actId uint32, userId string) error
 	Save(ctx context.Context, tx *sql.Tx, activity *model.Activity) (*model.Activity, error)
 	FindDetailActivityByUID(ctx context.Context, tx *sql.Tx, userId string) ([]*web.Activity, error)
 }
