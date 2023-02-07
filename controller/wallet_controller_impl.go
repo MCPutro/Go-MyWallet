@@ -58,9 +58,9 @@ func (w *walletControllerImpl) GetWalletById(c *fiber.Ctx) error {
 //}
 
 func (w *walletControllerImpl) AddWallet(c *fiber.Ctx) error {
-	//userid := c.Get("userid")
+	userid := c.Get("UserId")
 
-	body := new(model.Wallet)
+	body := new(web.WalletReq)
 	//body.UserId = userid
 
 	if err := c.BodyParser(body); err != nil {
@@ -71,24 +71,34 @@ func (w *walletControllerImpl) AddWallet(c *fiber.Ctx) error {
 		})
 	}
 
-	wallet, err := w.walletService.AddWallet(c.Context(), body)
+	wallet, err := w.walletService.AddWallet(c.Context(), &model.Wallet{
+		UserId: userid,
+		Name:   body.Name,
+		Type:   body.Type,
+		Amount: body.Amount,
+	})
 
 	return helper.PrintResponse(err, wallet, c)
 }
 
 func (w *walletControllerImpl) DeleteWallet(c *fiber.Ctx) error {
-	body := new(model.Wallet)
-	//body.UserId = userid
+	//body := new(model.Wallet)
+	////body.UserId = userid
+	//
+	//if err := c.BodyParser(body); err != nil {
+	//	return c.JSON(web.Response{
+	//		Status:  "ERROR",
+	//		Message: err.Error(),
+	//		Data:    nil,
+	//	})
+	//}
 
-	if err := c.BodyParser(body); err != nil {
-		return c.JSON(web.Response{
-			Status:  "ERROR",
-			Message: err.Error(),
-			Data:    nil,
-		})
-	}
+	userid := c.Get("UserId")
+	paramWalletId := c.Params("WalletId")
 
-	err := w.walletService.DeleteWallet(c.Context(), body.UserId, body.WalletId)
+	walletId, err := strconv.ParseUint(paramWalletId, 10, 32)
+
+	err = w.walletService.DeleteWallet(c.Context(), userid, uint32(walletId))
 
 	return helper.PrintResponse(err, nil, c)
 }

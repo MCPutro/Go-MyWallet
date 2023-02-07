@@ -29,7 +29,7 @@ func NewRouter(UserController controller.UserController, walletController contro
 	walletAPI.Get("/uid", walletController.GetWalletByUID)
 	walletAPI.Get("/:WalletId", walletController.GetWalletById)
 	walletAPI.Get("/type", walletController.GetWalletType)
-	walletAPI.Delete("/", walletController.DeleteWallet)
+	walletAPI.Delete("/:WalletId", walletController.DeleteWallet)
 
 	activityGroup := app.Group("/activity", customMiddleware)
 
