@@ -26,6 +26,10 @@ var (
 	MOB_ANDROID = mustGetEnv("MOB_ANDROID_KEY")
 )
 
+type contextKey string
+
+const ContextKeyRequestID contextKey = "requestID"
+
 func mustGetEnv(k string) string {
 	/* if run in localhost will load from variable(file) environment */
 	err := godotenv.Load(".env")

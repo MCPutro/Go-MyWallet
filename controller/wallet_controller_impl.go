@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"github.com/MCPutro/Go-MyWallet/entity/model"
 	"github.com/MCPutro/Go-MyWallet/entity/web"
 	"github.com/MCPutro/Go-MyWallet/helper"
@@ -27,6 +28,8 @@ func (w *walletControllerImpl) GetWalletByUID(c *fiber.Ctx) error {
 }
 
 func (w *walletControllerImpl) GetWalletById(c *fiber.Ctx) error {
+	fmt.Println(c.UserContext().Value(fiber.HeaderXRequestID).(string))
+
 	userid := c.Get("UserId")
 	//param := c.Get("wallet")
 	paramWalletId := c.Params("WalletId")
@@ -36,7 +39,8 @@ func (w *walletControllerImpl) GetWalletById(c *fiber.Ctx) error {
 		return helper.PrintResponse(err, nil, c)
 	}
 
-	getWalletById, err := w.walletService.GetWalletById(c.Context(), userid, uint32(walletId))
+	getWalletById, err := w.walletService.GetWalletById(c.UserContext(), userid, uint32(walletId))
+	c.Set(fiber.HeaderXRequestID, c.UserContext().Value(fiber.HeaderXRequestID).(string))
 	return helper.PrintResponse(err, getWalletById, c)
 }
 

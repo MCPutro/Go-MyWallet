@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/MCPutro/Go-MyWallet/entity/model"
 	"github.com/MCPutro/Go-MyWallet/helper"
 	"github.com/MCPutro/Go-MyWallet/repository"
 	"github.com/go-playground/validator/v10"
+	"github.com/gofiber/fiber/v2"
 )
 
 type walletServiceImpl struct {
@@ -101,6 +103,8 @@ func (w *walletServiceImpl) GetWalletByUserId(ctx context.Context, UID string) (
 }
 
 func (w *walletServiceImpl) GetWalletById(ctx context.Context, userid string, walletId uint32) (*model.Wallet, error) {
+	fmt.Println(ctx.Value(fiber.HeaderXRequestID).(string))
+
 	/* create db transaction */
 	conn, err := w.db.Conn(ctx)
 	beginTx, err := conn.BeginTx(ctx, nil)

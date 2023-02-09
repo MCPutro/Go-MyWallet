@@ -1,11 +1,13 @@
 package middleware
 
 import (
+	"context"
 	"github.com/MCPutro/Go-MyWallet/entity/web"
 	"github.com/MCPutro/Go-MyWallet/helper"
 	"github.com/MCPutro/Go-MyWallet/service"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 	"strings"
 )
 
@@ -53,6 +55,13 @@ func CustomMiddleware(jwtService service.JwtService) fiber.Handler {
 			if decryption == headerUserId && decryption == ClaimUID.(string)+"-"+ClaimId.(string) && ClaimId.(string) == headerId[len(headerId)-1] {
 				//c.Request().SetBodyRaw([]byte("{\"haha update di middleware\":1}"))
 				//c.Request().SetBody([]byte("{\"haha update di middleware\":2}"))
+				ctx := context.WithValue(c.UserContext(), fiber.HeaderXRequestID, uuid.New().String())
+				//s, ok := ctx.Value(app.ContextKeyRequestID).(string)
+				//if ok {
+				//	fmt.Println(">>", s)
+				//}
+				c.SetUserContext(ctx)
+
 				return c.Next()
 			}
 
