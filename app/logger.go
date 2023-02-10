@@ -1,15 +1,29 @@
 package app
 
 import (
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"log"
 	"os"
+	"strings"
 )
 
 func InitLog(path string) *logrus.Logger {
 	logger := logrus.New()
 
 	logger.SetReportCaller(true)
+
+	//check path already exists or not
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		temp := strings.Split(path, "/")
+
+		test := strings.Join(temp[:len(temp)-1], "/")
+		err = os.MkdirAll(test, 0700)
+		if err != nil {
+			fmt.Println("error init log")
+			return nil
+		}
+	}
 
 	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
