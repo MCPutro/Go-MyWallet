@@ -22,13 +22,12 @@ var (
 	/* port for application */
 	AppPort = mustGetEnv("PORT")
 
+	/*Log*/
+	LogApp = mustGetEnv("LOG_APP")
+
 	WEB         = mustGetEnv("WEB_KEY")
 	MOB_ANDROID = mustGetEnv("MOB_ANDROID_KEY")
 )
-
-type contextKey string
-
-const ContextKeyRequestID contextKey = "requestID"
 
 func mustGetEnv(k string) string {
 	/* if run in localhost will load from variable(file) environment */

@@ -14,6 +14,10 @@ import (
 func main() {
 	jwtService := service.NewJwtService("Go-MyWallet")
 
+	logger := app.InitLog(app.LogApp)
+
+	logger.Infoln("Starting Application...")
+
 	validate := validator.New()
 	db, err := app.InitDatabase()
 	if err != nil {
@@ -27,11 +31,13 @@ func main() {
 		}
 	}(db)
 
+	logger.Infoln("Initial Variable...")
+
 	userRepository := repository.NewUserRepository()
 	userService := service.NewUserService(userRepository, db, validate, jwtService)
 	userController := controller.NewUserController(userService)
 
-	walletRepository := repository.NewWalletRepository()
+	walletRepository := repository.NewWalletRepository(logger)
 	walletService := service.NewWalletService(validate, db, walletRepository)
 	walletController := controller.NewWalletController(walletService)
 
@@ -49,9 +55,12 @@ func main() {
 		PORT = "9999"
 	}
 
+	logger.Infoln("Running in port", PORT)
+
 	err = newRouter.Listen(":" + PORT)
 	if err != nil {
 		fmt.Println(err)
+		logger.Errorln(err)
 	}
 
 }

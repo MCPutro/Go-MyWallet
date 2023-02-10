@@ -6,17 +6,21 @@ import (
 	"fmt"
 	"github.com/MCPutro/Go-MyWallet/entity/model"
 	"github.com/MCPutro/Go-MyWallet/query"
+	"github.com/gofiber/fiber/v2"
+	"github.com/sirupsen/logrus"
 )
 
-type walletRepositoryImpl struct{}
+type walletRepositoryImpl struct {
+	log *logrus.Logger
+}
 
 func (w *walletRepositoryImpl) AddAmount(ctx context.Context, tx *sql.Tx, walletId uint32, uid string, amount uint32, category string) (uint32, error) {
 	var queryUpdate string
-	sql := "UPDATE public.wallets SET amount = (amount %s $2) WHERE wallet_id = $1 and user_id = $3 returning amount;"
+	querySQL := "UPDATE public.wallets SET amount = (amount %s $2) WHERE wallet_id = $1 and user_id = $3 returning amount;"
 	if category == "EXP" {
-		queryUpdate = fmt.Sprintf(sql, "-")
+		queryUpdate = fmt.Sprintf(querySQL, "-")
 	} else {
-		queryUpdate = fmt.Sprintf(sql, "+")
+		queryUpdate = fmt.Sprintf(querySQL, "+")
 	}
 
 	//_, err := tx.ExecContext(ctx, queryUpdate, walletId, amount, uid)
@@ -93,9 +97,19 @@ func (w *walletRepositoryImpl) FindByUserId(ctx context.Context, tx *sql.Tx, uid
 func (w *walletRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, userid string, walletId uint32) (*model.Wallet, error) {
 	querySQL := fmt.Sprintf(query.GetWalletById, "w.wallet_id = $1 and w.user_id = $2 ")
 
+	/*logging*/
+	w.log.WithFields(logrus.Fields{
+		"state":   "START",
+		"payload": fmt.Sprintf("userId : %s ; walletId : %d", userid, walletId),
+		"query":   querySQL,
+	}).Infoln(ctx.Value(fiber.HeaderXRequestID).(string))
+
 	rows, err := tx.QueryContext(ctx, querySQL, walletId, userid)
 	defer rows.Close()
 	if err != nil {
+		/*log error*/
+		w.log.WithField("ERROR", err).Errorln(ctx.Value(fiber.HeaderXRequestID).(string))
+
 		return nil, err
 	}
 
@@ -108,6 +122,12 @@ func (w *walletRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, userid 
 			//fmt.Println("fetch data wallet :", err)
 			return nil, err
 		}
+
+		/*logging finish*/
+		w.log.WithFields(logrus.Fields{
+			"state":   "FINISH",
+			"payload": fmt.Sprintf("%+v", tWallet),
+		}).Infoln(ctx.Value(fiber.HeaderXRequestID).(string))
 
 		return &tWallet, nil
 	}
@@ -153,6 +173,6 @@ func (w *walletRepositoryImpl) DeleteById(ctx context.Context, tx *sql.Tx, useri
 	return nil
 }
 
-func NewWalletRepository() WalletRepository {
-	return &walletRepositoryImpl{}
+func NewWalletRepository(log *logrus.Logger) WalletRepository {
+	return &walletRepositoryImpl{log: log}
 }
