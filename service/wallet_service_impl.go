@@ -10,12 +10,14 @@ import (
 	"github.com/MCPutro/Go-MyWallet/repository"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/sirupsen/logrus"
 )
 
 type walletServiceImpl struct {
 	validate   *validator.Validate
 	walletRepo repository.WalletRepository
 	db         *sql.DB
+	log        *logrus.Logger
 }
 
 func (w *walletServiceImpl) UpdateWallet(ctx context.Context, wallet *model.Wallet) (*model.Wallet, error) {
@@ -103,7 +105,10 @@ func (w *walletServiceImpl) GetWalletByUserId(ctx context.Context, UID string) (
 }
 
 func (w *walletServiceImpl) GetWalletById(ctx context.Context, userid string, walletId uint32) (*model.Wallet, error) {
-	fmt.Println(ctx.Value(fiber.HeaderXRequestID).(string))
+	/*logging start*/
+	w.log.WithFields(logrus.Fields{
+		"state": "START", "payload": fmt.Sprintf("userId : %s ; walletId : %d", userid, walletId), //fmt.Sprintf("%+v", newWallet),
+	}).Infoln(ctx.Value(fiber.HeaderXRequestID).(string))
 
 	/* create db transaction */
 	conn, err := w.db.Conn(ctx)
@@ -118,12 +123,23 @@ func (w *walletServiceImpl) GetWalletById(ctx context.Context, userid string, wa
 	/*get user id*/
 	id, _ := helper.GetUserIdAndAccountId(userid)
 
+	/*logging out*/
+	w.log.WithFields(logrus.Fields{
+		"state": "OUT", "payload": fmt.Sprintf("id : %s ; walletId : %d", id, walletId), //fmt.Sprintf("%+v", newWallet),
+	}).Infoln(ctx.Value(fiber.HeaderXRequestID).(string))
+
 	/* call repo func */
 	wallet, err := w.walletRepo.FindById(ctx, beginTx, id, walletId)
 	if err != nil {
 		return nil, err
 	}
 
+	/*logging start*/
+	w.log.WithFields(logrus.Fields{
+		"state": "START", "payload": fmt.Sprintf("%+v", wallet),
+	}).Infoln(ctx.Value(fiber.HeaderXRequestID).(string))
+
+	/*return object*/
 	return wallet, nil
 }
 
@@ -176,6 +192,6 @@ func (w *walletServiceImpl) DeleteWallet(ctx context.Context, userid string, wal
 	return err
 }
 
-func NewWalletService(validate *validator.Validate, database *sql.DB, walletRepo repository.WalletRepository) WalletService {
-	return &walletServiceImpl{validate: validate, db: database, walletRepo: walletRepo}
+func NewWalletService(validate *validator.Validate, database *sql.DB, walletRepo repository.WalletRepository, log *logrus.Logger) WalletService {
+	return &walletServiceImpl{validate: validate, db: database, walletRepo: walletRepo, log: log}
 }

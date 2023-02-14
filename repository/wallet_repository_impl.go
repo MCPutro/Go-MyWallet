@@ -34,30 +34,38 @@ func (w *walletRepositoryImpl) AddAmount(ctx context.Context, tx *sql.Tx, wallet
 }
 
 func (w *walletRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, newWallet *model.Wallet) (*model.Wallet, error) {
-	queryInsert := "INSERT INTO public.wallets (user_id, wallet_name, type, amount) VALUES ($1, $2, $3, $4) RETURNING wallet_id;"
+	querySQL := "INSERT INTO public.wallets (user_id, wallet_name, type, amount) VALUES ($1, $2, $3, $4) RETURNING wallet_id;"
+
+	/*logging start*/
+	w.log.WithFields(logrus.Fields{"state": "START", "payload": fmt.Sprintf("%+v", newWallet), "query": querySQL}).Infoln(ctx.Value(fiber.HeaderXRequestID))
 
 	var insertId uint32
-	err := tx.QueryRowContext(ctx, queryInsert, newWallet.UserId, newWallet.Name, newWallet.Type, newWallet.Amount).Scan(&insertId)
+	err := tx.QueryRowContext(ctx, querySQL, newWallet.UserId, newWallet.Name, newWallet.Type, newWallet.Amount).Scan(&insertId)
 	if err != nil {
+		/*logging error*/
+		w.log.WithField("ERROR", err).Errorln(ctx.Value(fiber.HeaderXRequestID).(string))
 		return nil, err
 	}
 
-	//fmt.Println(result)
-	//insertId, err := result.LastInsertId()
 	newWallet.WalletId = insertId
 
 	return newWallet, nil
 }
 
 func (w *walletRepositoryImpl) Update(ctx context.Context, tx *sql.Tx, newWallet *model.Wallet) (*model.Wallet, error) {
-	queryUpdate := "UPDATE public.wallets SET user_id = $1, wallet_name = $2, type = $3, is_active = $4, amount = $5 WHERE wallet_id = $6 and user_id = $1;"
+	querySQL := "UPDATE public.wallets SET user_id = $1, wallet_name = $2, type = $3, is_active = $4, amount = $5 WHERE wallet_id = $6 and user_id = $1;"
+
+	/*logging start*/
+	w.log.WithFields(logrus.Fields{"state": "START", "payload": fmt.Sprintf("%+v", newWallet), "query": querySQL}).Infoln(ctx.Value(fiber.HeaderXRequestID).(string))
 
 	if newWallet.IsActive == "" {
 		newWallet.IsActive = "Y"
 	}
 
-	_, err := tx.ExecContext(ctx, queryUpdate, newWallet.UserId, newWallet.Name, newWallet.Type, newWallet.IsActive, newWallet.Amount, newWallet.WalletId)
+	_, err := tx.ExecContext(ctx, querySQL, newWallet.UserId, newWallet.Name, newWallet.Type, newWallet.IsActive, newWallet.Amount, newWallet.WalletId)
 	if err != nil {
+		/*logging error*/
+		w.log.WithField("ERROR", err).Errorln(ctx.Value(fiber.HeaderXRequestID).(string))
 		return nil, err
 	}
 
@@ -66,11 +74,15 @@ func (w *walletRepositoryImpl) Update(ctx context.Context, tx *sql.Tx, newWallet
 
 func (w *walletRepositoryImpl) FindByUserId(ctx context.Context, tx *sql.Tx, uid string) ([]*model.Wallet, error) {
 	querySQL := fmt.Sprintf(query.GetWalletById, "w.user_id = $1")
-	//fmt.Println(querySQL)
+
+	/*logging*/
+	w.log.WithFields(logrus.Fields{"state": "START", "payload": fmt.Sprintf("userId:%s", uid), "query": querySQL}).Infoln(ctx.Value(fiber.HeaderXRequestID))
 
 	rows, err := tx.QueryContext(ctx, querySQL, uid)
 	defer rows.Close()
 	if err != nil {
+		/*logging error*/
+		w.log.WithField("ERROR", err).Errorln(ctx.Value(fiber.HeaderXRequestID))
 		return nil, err
 	}
 
@@ -80,7 +92,8 @@ func (w *walletRepositoryImpl) FindByUserId(ctx context.Context, tx *sql.Tx, uid
 		var tWallet model.Wallet
 		err = rows.Scan(&tWallet.UserId, &tWallet.WalletId, &tWallet.Name, &tWallet.Type, &tWallet.Amount)
 		if err != nil {
-			fmt.Println("fetch data wallet :", err)
+			/*logging error*/
+			w.log.WithField("ERROR", err).Errorln(ctx.Value(fiber.HeaderXRequestID))
 			return nil, err
 		}
 
@@ -99,35 +112,27 @@ func (w *walletRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, userid 
 
 	/*logging*/
 	w.log.WithFields(logrus.Fields{
-		"state":   "START",
-		"payload": fmt.Sprintf("userId : %s ; walletId : %d", userid, walletId),
-		"query":   querySQL,
-	}).Infoln(ctx.Value(fiber.HeaderXRequestID).(string))
+		"state": "START", "payload": fmt.Sprintf("userId:%s ; walletId:%d", userid, walletId), "query": querySQL,
+	}).Infoln(ctx.Value(fiber.HeaderXRequestID))
 
 	rows, err := tx.QueryContext(ctx, querySQL, walletId, userid)
 	defer rows.Close()
 	if err != nil {
-		/*log error*/
-		w.log.WithField("ERROR", err).Errorln(ctx.Value(fiber.HeaderXRequestID).(string))
+		/*logging error*/
+		w.log.WithField("ERROR", err).Errorln(ctx.Value(fiber.HeaderXRequestID))
 
 		return nil, err
 	}
 
-	//var walletList model.Wallet
-	var tWallet model.Wallet
-
 	if rows.Next() {
+		var tWallet model.Wallet
 		err = rows.Scan(&tWallet.UserId, &tWallet.WalletId, &tWallet.Name, &tWallet.Type, &tWallet.Amount)
 		if err != nil {
-			//fmt.Println("fetch data wallet :", err)
+			/*logging error*/
+			w.log.WithField("ERROR", err).Errorln(ctx.Value(fiber.HeaderXRequestID))
+
 			return nil, err
 		}
-
-		/*logging finish*/
-		w.log.WithFields(logrus.Fields{
-			"state":   "FINISH",
-			"payload": fmt.Sprintf("%+v", tWallet),
-		}).Infoln(ctx.Value(fiber.HeaderXRequestID).(string))
 
 		return &tWallet, nil
 	}
@@ -165,8 +170,13 @@ func (w *walletRepositoryImpl) DeleteById(ctx context.Context, tx *sql.Tx, useri
 
 	querySQL := "delete from public.wallets where user_id = $1 and wallet_id = $2 ;"
 
+	/*logging*/
+	w.log.WithFields(logrus.Fields{"state": "START", "payload": fmt.Sprintf("userId:%s ; walletId:%d", userid, walletId), "query": querySQL}).Infoln(ctx.Value(fiber.HeaderXRequestID))
+
 	_, err := tx.ExecContext(ctx, querySQL, userid, walletId)
 	if err != nil {
+		/*logging error*/
+		w.log.WithField("ERROR", err).Errorln(ctx.Value(fiber.HeaderXRequestID))
 		return err
 	}
 

@@ -38,7 +38,7 @@ func main() {
 	userController := controller.NewUserController(userService)
 
 	walletRepository := repository.NewWalletRepository(logger)
-	walletService := service.NewWalletService(validate, db, walletRepository)
+	walletService := service.NewWalletService(validate, db, walletRepository, logger)
 	walletController := controller.NewWalletController(walletService)
 
 	activityRepository := repository.NewActivityRepository()

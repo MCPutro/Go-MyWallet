@@ -42,11 +42,11 @@ func (j *jwtServiceImpl) GenerateToken(UserId, AccId string) string {
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
 	ss, err := token.SignedString([]byte(j.secretKey))
 	//fmt.Printf("%v %v", ss, err)
 	if err != nil {
-		return ""
+		return err.Error()
 	}
 	return ss
 }

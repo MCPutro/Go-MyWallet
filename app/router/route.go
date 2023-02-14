@@ -27,8 +27,8 @@ func NewRouter(UserController controller.UserController, walletController contro
 	walletAPI.Post("/", walletController.AddWallet)
 	//walletAPI.Post("/update", walletController.UpdateWallet)
 	walletAPI.Get("/uid", walletController.GetWalletByUID)
-	walletAPI.Get("/:WalletId", walletController.GetWalletById)
 	walletAPI.Get("/type", walletController.GetWalletType)
+	walletAPI.Get("/:WalletId", walletController.GetWalletById)
 	walletAPI.Delete("/:WalletId", walletController.DeleteWallet)
 
 	activityGroup := app.Group("/activity", customMiddleware)
@@ -36,7 +36,7 @@ func NewRouter(UserController controller.UserController, walletController contro
 	activityGroup.Get("/category", activityController.GetActivityTypes)
 	activityGroup.Post("/", activityController.AddActivity)
 	activityGroup.Get("/", activityController.GetAllActivity)
-	activityGroup.Delete("/", activityController.DeleteActivity)
+	activityGroup.Delete("/:ActivityId", activityController.DeleteActivity)
 
 	return app
 }

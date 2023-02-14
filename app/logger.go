@@ -9,16 +9,13 @@ import (
 )
 
 func InitLog(path string) *logrus.Logger {
-	logger := logrus.New()
-
-	logger.SetReportCaller(true)
 
 	//check path already exists or not
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		temp := strings.Split(path, "/")
 
 		test := strings.Join(temp[:len(temp)-1], "/")
-		err = os.MkdirAll(test, 0700)
+		err = os.MkdirAll(test, 0666)
 		if err != nil {
 			fmt.Println("error init log")
 			return nil
@@ -30,6 +27,11 @@ func InitLog(path string) *logrus.Logger {
 		log.Println("[ERROR] Initial Logrus : ", err)
 		return nil
 	}
+
+	logger := logrus.New()
+
+	logger.SetReportCaller(true)
+
 	logger.SetOutput(file)
 
 	return logger

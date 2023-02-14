@@ -15,7 +15,7 @@ func CustomMiddleware(jwtService service.JwtService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
 		//check the request is use auth Bearer or not
-		auth := c.Get(fiber.HeaderAuthorization, "xxx")
+		auth := c.Get(fiber.HeaderAuthorization, "")
 		if !strings.HasPrefix(auth, "Bearer ") {
 			return c.Status(fiber.StatusUnauthorized).JSON(web.Response{
 				Status:  "ERROR",
@@ -27,7 +27,7 @@ func CustomMiddleware(jwtService service.JwtService) fiber.Handler {
 		//validation jwt
 		validateToken, err := jwtService.ValidateToken(strings.ReplaceAll(auth, "Bearer ", ""))
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(web.Response{
+			return c.Status(fiber.StatusUnauthorized).JSON(web.Response{
 				Status:  "ERROR",
 				Message: err.Error(),
 				Data:    nil,
@@ -41,9 +41,9 @@ func CustomMiddleware(jwtService service.JwtService) fiber.Handler {
 			ClaimUID := claims["UID"]
 			ClaimId := claims["Id"]
 			if ClaimData == nil && ClaimUID == nil && ClaimId == nil {
-				return c.Status(fiber.StatusInternalServerError).JSON(web.Response{
+				return c.Status(fiber.StatusUnauthorized).JSON(web.Response{
 					Status:  "ERROR",
-					Message: "invalid tokens",
+					Message: "Invalid Tokens",
 					Data:    nil,
 				})
 			}
@@ -53,28 +53,23 @@ func CustomMiddleware(jwtService service.JwtService) fiber.Handler {
 			headerId := strings.Split(headerUserId, "-")
 			decryption := strings.ReplaceAll(helper.Decryption(ClaimData.(string)), "#", "-")
 			if decryption == headerUserId && decryption == ClaimUID.(string)+"-"+ClaimId.(string) && ClaimId.(string) == headerId[len(headerId)-1] {
-				//c.Request().SetBodyRaw([]byte("{\"haha update di middleware\":1}"))
-				//c.Request().SetBody([]byte("{\"haha update di middleware\":2}"))
 				ctx := context.WithValue(c.UserContext(), fiber.HeaderXRequestID, uuid.New().String())
-				//s, ok := ctx.Value(app.ContextKeyRequestID).(string)
-				//if ok {
-				//	fmt.Println(">>", s)
-				//}
 				c.SetUserContext(ctx)
 
+				/*continue*/
 				return c.Next()
 			}
 
-			return c.Status(fiber.StatusInternalServerError).JSON(web.Response{
+			return c.Status(fiber.StatusUnauthorized).JSON(web.Response{
 				Status:  "ERROR",
-				Message: "invalid tokens",
+				Message: "Invalid Tokens",
 				Data:    nil,
 			})
 
 		} else {
-			return c.Status(fiber.StatusInternalServerError).JSON(web.Response{
+			return c.Status(fiber.StatusUnauthorized).JSON(web.Response{
 				Status:  "ERROR",
-				Message: "Token invalid",
+				Message: "Internal Server Error",
 				Data:    nil,
 			})
 		}

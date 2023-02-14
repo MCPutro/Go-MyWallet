@@ -29,8 +29,10 @@ func (a *activityServiceImpl) DeleteActivity(ctx context.Context, actId uint32, 
 		return err
 	}
 
+	getUid, _ := helper.GetUserIdAndAccountId(UID)
+
 	//get activity
-	activity, err := a.activityRepo.FindById(ctx, beginTx, actId, UID)
+	activity, err := a.activityRepo.FindById(ctx, beginTx, actId, getUid)
 	if err != nil {
 		return err
 	}
@@ -87,7 +89,9 @@ func (a *activityServiceImpl) GetActivityList(ctx context.Context, UID string) (
 		return nil, err
 	}
 
-	uid, err := a.activityRepo.FindDetailActivityByUID(ctx, beginTx, UID)
+	tempUid, _ := helper.GetUserIdAndAccountId(UID)
+
+	uid, err := a.activityRepo.FindDetailActivityByUID(ctx, beginTx, tempUid)
 	if err != nil {
 		return nil, err
 	}
@@ -116,6 +120,8 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 	} else if category.Type == "TRF" && activity.WalletIdFrom == activity.WalletIdTo {
 		return nil, errors.New("gak boleh sama")
 	}
+
+	activity.UserId, _ = helper.GetUserIdAndAccountId(activity.UserId)
 
 	//check current balance wallet from is greater than nominal activity and wallet id is existing or not
 	walletFrom, err := a.walletRepository.FindById(ctx, beginTx, activity.UserId, activity.WalletIdFrom)
