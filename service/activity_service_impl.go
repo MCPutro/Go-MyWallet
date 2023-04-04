@@ -154,7 +154,7 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 
 			return &web.NewActivityResponse{
 				ActivityId:         activitySave.ActivityId,
-				Type:               category.Type, //category.CategoryName,
+				Type:               category.Type,
 				Category:           category.SubCategoryName,
 				WalletIdFrom:       walletFrom.WalletId,
 				WalletIdTo:         activitySave.WalletIdTo,
@@ -176,7 +176,7 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 
 			return &web.NewActivityResponse{
 				ActivityId:         activitySave.ActivityId,
-				Type:               category.CategoryName,
+				Type:               category.Type,
 				Category:           category.SubCategoryName,
 				WalletIdFrom:       walletFrom.WalletId,
 				WalletIdTo:         walletTo.WalletId,
@@ -188,9 +188,6 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 			}, nil
 		}
 	}
-
-	//return activity with id
-	//return nil, err
 }
 
 func (a *activityServiceImpl) GetActivityCategory(ctx context.Context) (*web.ResponseActivityType, error) {
