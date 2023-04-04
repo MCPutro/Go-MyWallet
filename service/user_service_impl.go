@@ -78,10 +78,11 @@ func (u *userServiceImpl) Login(ctx context.Context, param string, password stri
 		} else {
 			return nil, errors.New("your account is inactive")
 		}
+		findUserByUsernameOrEmail.UserId += "-" + findUserByUsernameOrEmail.AccountId
+		return findUserByUsernameOrEmail, nil
 	}
 
-	findUserByUsernameOrEmail.UserId += "-" + findUserByUsernameOrEmail.AccountId
-	return findUserByUsernameOrEmail, nil
+	return nil, errors.New("account not found")
 }
 
 func (u *userServiceImpl) Registration(ctx context.Context, userRegistration *web.UserRegistration) (*model.Users, error) {

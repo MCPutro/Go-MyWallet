@@ -134,7 +134,7 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 	}
 
 	//check wallet id is existing or not
-	walletTo, err := a.walletRepository.FindById(ctx, beginTx, activity.UserId, activity.WalletIdFrom)
+	walletTo, err := a.walletRepository.FindById(ctx, beginTx, activity.UserId, activity.WalletIdTo)
 	if err != nil {
 		return nil, err
 	} else if walletFrom == nil {
@@ -181,8 +181,8 @@ func (a *activityServiceImpl) AddActivity(ctx context.Context, activity *model.A
 				WalletIdFrom:       walletFrom.WalletId,
 				WalletIdTo:         walletTo.WalletId,
 				ActivityDate:       activitySave.ActivityDate,
-				Nominal:            activitySave.Nominal,
 				AmountWalletIdFrom: updateAmountFrom,
+				Nominal:            activitySave.Nominal,
 				AmountWalletIdTo:   updateAmountTo,
 				Desc:               activitySave.Desc,
 			}, nil

@@ -39,8 +39,8 @@ func CustomMiddleware(jwtService service.JwtService) fiber.Handler {
 			claims := validateToken.Claims.(jwt.MapClaims)
 			ClaimData := claims["Data"]
 			ClaimUID := claims["UID"]
-			ClaimId := claims["Id"]
-			if ClaimData == nil && ClaimUID == nil && ClaimId == nil {
+			//ClaimId := claims["Id"]
+			if ClaimData == nil && ClaimUID == nil { //&& ClaimId == nil {
 				return c.Status(fiber.StatusUnauthorized).JSON(web.Response{
 					Status:  "ERROR",
 					Message: "Invalid Tokens",
@@ -50,9 +50,9 @@ func CustomMiddleware(jwtService service.JwtService) fiber.Handler {
 
 			//cek header headerUserId is same with UID in jwt? need to encrypt UID in jwt
 			headerUserId := c.Get("UserId", "xxx")
-			headerId := strings.Split(headerUserId, "-")
+			//headerId := strings.Split(headerUserId, "-")
 			decryption := strings.ReplaceAll(helper.Decryption(ClaimData.(string)), "#", "-")
-			if decryption == headerUserId && decryption == ClaimUID.(string)+"-"+ClaimId.(string) && ClaimId.(string) == headerId[len(headerId)-1] {
+			if decryption == headerUserId && decryption == ClaimUID.(string) { //ClaimUID.(string) == headerId[len(headerId)-1]
 				ctx := context.WithValue(c.UserContext(), fiber.HeaderXRequestID, uuid.New().String())
 				c.SetUserContext(ctx)
 

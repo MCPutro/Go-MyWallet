@@ -31,6 +31,14 @@ func main() {
 		}
 	}(db)
 
+	err = db.Ping()
+	if err != nil {
+		logger.Errorln("Database Connected : ", err)
+		return
+	} else {
+		logger.Infoln("Database is Connected")
+	}
+
 	logger.Infoln("Initial Variable...")
 
 	userRepository := repository.NewUserRepository()

@@ -14,7 +14,7 @@ const (
 		inner join user_authentication ua1 on ud.user_id = ua1.user_id and ua1.data_key = 'PASSWORD'
 		inner join user_data ud2 on u.user_id = ud.user_id and ud.user_id = ud2.user_id
 		where ud.data_key = 'EMAIL' and ud.data_value = $1 
-		group by (ud.user_id, password) `
+		group by (ud.user_id, u.account_id, u.username, u.full_name, u.status, u.created_date, password) `
 
 	GetListAccount = `select username from public.users 
                 union 
